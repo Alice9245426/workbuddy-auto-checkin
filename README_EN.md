@@ -52,6 +52,8 @@
 | 🔁 **Idempotent** | Checks today's status first; skips if already checked in |
 | 🔐 **Breaks credential encryption** | Provides a complete approach to decrypt WorkBuddy's new envelope-encrypted tokens |
 | 🛡️ **Zero credential leak** | Tokens stay in memory / env vars / GitHub Secrets, never printed or written to disk |
+| 🔄 **Auto-renewal** | Optional: with a refreshToken, refresh the accessToken before check-in (extends cloud validity to ~60 days) |
+| 📣 **Result notification** | Optional: push results to Telegram / ServerChan (WeChat) / generic webhook |
 | 🚀 **Zero dependencies** | Cloud script uses only the Python standard library |
 
 ---
@@ -86,12 +88,15 @@ python signin.py status
 
 ```
 workbuddy-auto-checkin/
-├── cloud_checkin.py              # Cloud check-in script (pure stdlib, zero deps)
+├── cloud_checkin.py              # Cloud check-in script (pure stdlib, zero deps, +renewal +notify)
 ├── .github/
 │   ├── workflows/
-│   │   └── checkin.yml           # GitHub Actions schedule config
+│   │   ├── checkin.yml           # Check-in schedule (00:00 Beijing time daily)
+│   │   └── ci.yml                # CI self-check (syntax / import / no-token dry run)
 │   ├── ISSUE_TEMPLATE/           # Issue templates
-│   └── PULL_REQUEST_TEMPLATE.md  # PR template
+│   ├── PULL_REQUEST_TEMPLATE.md  # PR template
+│   └── FUNDING.yml               # Funding entry
+├── assets/                       # Logo and social preview
 ├── CONTRIBUTING.md               # Contribution guide
 ├── CHANGELOG.md                  # Changelog
 ├── CODE_OF_CONDUCT.md            # Code of conduct
@@ -220,6 +225,28 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 Repo **Actions** tab → select the workflow → **Run workflow**. Success if the log shows `{"ok": true, ...}`.
 
+#### 5. Result notification (optional)
+
+Configure extra secrets to push check-in results (success / already-done / failure):
+
+| Secret | Channel | Notes |
+|---|---|---|
+| `TG_BOT_TOKEN` + `TG_CHAT_ID` | Telegram | Push via Bot API |
+| `SERVERCHAN_KEY` | ServerChan (WeChat) | Get a SendKey at [sct.ftqq.com](https://sct.ftqq.com) |
+| `NOTIFY_WEBHOOK` | Generic webhook | POSTs a JSON payload to the URL |
+
+The three channels can be configured together; configure none to run silently.
+
+#### 6. Token auto-renewal (optional)
+
+By default the cloud only stores `accessToken` (~30 days). If you also set `WB_REFRESH_TOKEN` (the refreshToken), the script refreshes the accessToken before check-in, extending cloud validity to about **60 days**:
+
+| Secret | Notes |
+|---|---|
+| `WB_REFRESH_TOKEN` | refreshToken (extracted alongside accessToken from local credentials) |
+
+> ⚠️ The refresh endpoint is reversed from the client and may break; on failure the script falls back to the original `WB_TOKEN`, so the main flow is unaffected. Note the refreshToken itself also expires (~60 days) and must be re-extracted.
+
 ### Schedule note
 
 `checkin.yml` cron `0 16 * * *` corresponds to **00:00 Beijing time** (UTC+8). GitHub Actions schedules are not exact and may lag a few to a dozen minutes.
@@ -255,7 +282,7 @@ Key findings:
 - Refresh is triggered **automatically by the WorkBuddy client in the background** (no manual login).
 - Therefore: **PC usually on + client resident in background → local token auto-renews and never expires**, so the local option can run indefinitely.
 
-The cloud `accessToken` in Secrets is a one-time snapshot (expires in 30 days). For a long-lived cloud setup, you could extend it into a "store `refreshToken` + refresh before check-in" loop (note: may compete with the local client for the token).
+The cloud `accessToken` in Secrets is a one-time snapshot (expires in 30 days). `cloud_checkin.py` now has built-in auto-renewal ("store `refreshToken` + refresh before check-in", see Option 2 step 6), extending cloud validity to ~60 days (note: may compete with the local client for the token).
 
 ---
 
