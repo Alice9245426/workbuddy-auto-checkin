@@ -11,6 +11,7 @@
 - 完整中文文档 `README.md` 与英文文档 `README_EN.md`。
 - 社区规范文件：贡献指南、行为准则、安全政策。
 - Issue 模板（Bug 报告 / 功能请求）与 PR 模板。
+- 项目 logo（`assets/logo.png`）与社交预览图（`assets/social-preview.png`）。
 
 ### 文档
 
