@@ -30,6 +30,7 @@
 
 - [Features](#-features)
 - [Quick Start](#-quick-start)
+- [One Prompt to Set It Up (Skill)](#-one-prompt-to-set-it-up-skill)
 - [Share with a Friend: One Prompt for Your AI](#-share-with-a-friend-one-prompt-for-your-ai)
 - [Project Structure](#-project-structure)
 - [How It Works: Encrypted Credentials](#-how-it-works-encrypted-credentials)
@@ -55,25 +56,25 @@
 | 🛡️ **Zero credential leak** | Tokens stay in memory / env vars / GitHub Secrets, never printed or written to disk |
 | 🔄 **Auto-renewal** | Optional: with a refreshToken, refresh the accessToken before check-in (extends cloud validity to ~60 days) |
 | 📣 **Result notification** | Optional: push results to Telegram / ServerChan (WeChat) / generic webhook |
+| 🤖 **WorkBuddy Skill** | Ships `SKILL.md`: one sentence ("set up auto check-in") lets an AI deploy the local option |
 | 🚀 **Zero dependencies** | Cloud script uses only the Python standard library |
 
 ---
 
 ## 🚀 Quick Start
 
-**Local only (recommended if your PC is usually on)**:
+**🗣️ Easiest: let WorkBuddy do it (one sentence, recommended)**
 
-```bash
-# 1. Clone the local script that already solves the encryption
-git clone https://github.com/88lin/workbuddy-auto-signin.git
-cd workbuddy-auto-signin
+Copy `SKILL.md` into your WorkBuddy skills folder (or hand the repo URL to your AI assistant), then say "set up WorkBuddy auto check-in for me". The local option runs entirely on your machine — **no GitHub account, no authorization**. See [One Prompt to Set It Up](#-one-prompt-to-set-it-up-skill).
 
-# 2. Offline self-check + read-only verification
-python signin.py doctor
-python signin.py status
+**Local only (manual, PC usually on)**:
 
-# 3. Register a Windows scheduled task (see "Option 1")
+```powershell
+# One-shot: self-check + register scheduled tasks (run from the repo root)
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1
 ```
+
+Or follow ["Option 1"](#-option-1-local-windows-task-scheduler) step by step.
 
 **Cloud only (PC-independent fallback)**:
 
@@ -85,13 +86,45 @@ python signin.py status
 
 ---
 
+## 🤖 One Prompt to Set It Up (Skill)
+
+This repo ships a **WorkBuddy Skill** (`SKILL.md`) that turns the local deployment into AI-executable instructions.
+
+### Install the skill (pick one)
+
+- **Option A (recommended)**: copy `SKILL.md` and `scripts/` from the repo root into your user-level skills folder:
+  ```
+  %USERPROFILE%\.workbuddy\skills\workbuddy-auto-checkin\
+  ```
+  Keep `SKILL.md` at the top level and `scripts/setup_windows.ps1` in the subfolder.
+- **Option B**: hand the repo URL to your AI assistant and let it read `SKILL.md` and follow it.
+
+### Then say one sentence
+
+> "Set up WorkBuddy auto check-in for me"
+
+The skill will: locate `pythonw.exe` → fetch the upstream script → `doctor` self-check → read-only `status` check → register 2 scheduled tasks → read back and verify. **Everything stays on your machine: no GitHub account, no authorization, no AI token cost.**
+
+Or run the command directly (self-check first):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1 -SkipRegister  # check only
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1                # install
+```
+
+> Verified end-to-end: `doctor` detects `sym-v1` credentials, `status` returns HTTP 200, forced task run gives `LastTaskResult=0`, and the log is written.
+>
+> ⚠️ **The skill covers the local option only.** The cloud option needs your own GitHub account and token; an AI should not do that on your behalf — follow ["Option 2"](#-option-2-cloud-github-actions) manually.
+
+---
+
 ## 🎁 Share with a Friend: One Prompt for Your AI
 
 > ⚠️ **Do not** just say "help me install workbuddy-auto-checkin from GitHub". See below.
 
 ### Why that phrasing goes wrong
 
-1. **It is not an installable package**: there is no `SKILL.md`, `setup.py`, `pyproject.toml`, or `package.json` — it is neither a WorkBuddy skill nor a pip / npm package. It is a set of "Python script + GitHub Actions config"; the correct action is **fork it into your own account + configure Secrets**, not "install" it into some project.
+1. **"Install" sends the AI down the wrong path**: this is not a pip / npm package (no `setup.py`, `pyproject.toml`, `package.json`). The local option means **running a one-shot script to register Windows scheduled tasks** (or loading `SKILL.md`); the cloud option means **fork into your own account + configure Secrets**. Neither is an "install".
 2. **Many repos share this name**: a GitHub search for `workbuddy-auto-checkin` returns **30** same/near-name repos (plus an underscore variant `workbuddy_auto_checkin`), some with more stars than this one. With only the project name, an AI may well clone **someone else's repo**.
 3. **It really can land in someone else's project**: if the AI searches and forks/clones without an explicit owner, it will use whatever result it finds first. If your token ends up in a stranger's repo, you have handed your account credential to someone else's code — the single most important thing to avoid.
 
@@ -127,7 +160,11 @@ https://github.com/Alice9245426/workbuddy-auto-checkin
 
 ```
 workbuddy-auto-checkin/
+├── SKILL.md                      # WorkBuddy Skill: one sentence deploys the local option
+├── scripts/
+│   └── setup_windows.ps1         # One-shot installer (self-check + register tasks)
 ├── cloud_checkin.py              # Cloud check-in script (pure stdlib, zero deps, +renewal +notify)
+├── extract_token.py              # Credential extractor for cloud Secrets
 ├── .github/
 │   ├── workflows/
 │   │   ├── checkin.yml           # Check-in schedule (00:00 Beijing time daily)
