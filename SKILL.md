@@ -24,7 +24,7 @@ agent_created: true
 - 脚本用本机登录态直接调官方接口，**不需要 WorkBuddy 客户端常驻、不需要 GitHub 账号、不耗 AI token、无窗口**。
 - 登录态由客户端后台自动滚动续期（每次刷新顺延 60 天），电脑常开即可长期无人值守。
 
-**云端方案**（不能自动代劳）：需要用户自己的 GitHub 账号、Fork 仓库、填自己的 `accessToken` 到 Secrets。涉及他人账号凭据与授权，**不要替用户执行**，只引导其阅读仓库 README 的「方案二」。
+**云端方案**（不能自动代劳）：需要用户自己的 GitHub 账号、**新建私有仓库并只上传 `cloud_checkin.py` 与 `checkin.yml` 两个文件**（不要 Fork 本仓库）、由用户本人填 `accessToken` 到 Secrets。`accessToken` 是完整账号凭据，涉及账号授权，**不要替用户执行**，只引导其阅读仓库 README 的「方案二」。
 
 ## 前提（执行前先确认）
 
@@ -98,9 +98,18 @@ Get-Content "$env:LOCALAPPDATA\WorkBuddyAutoCheckin\signin.log" -Tail 3
 
 ## 云端方案（用户主动要求时才讲）
 
-明确告诉用户：云端不依赖本地电脑，但**必须用户本人**完成
-Fork `https://github.com/Alice9245426/workbuddy-auto-checkin` → 本机运行 `extract_token.py` 提取 uid/domain/token → 在自己仓库 Settings → Secrets 配置 `WB_TOKEN` / `WB_UID` / `WB_DOMAIN` → Actions 页手动触发验证。
-`accessToken` 约 30 天过期，到期需重新提取。详见 README「方案二」。
+明确告诉用户：云端不依赖本地电脑，但**必须用户本人**按 README「方案二」完成：
+把 `https://github.com/Alice9245426/workbuddy-auto-checkin` clone 到本机（只为跑提取脚本，**不要 Fork**）→ 本机运行 `extract_token.py` 提取 uid/domain/token → **新建私有仓库，只上传 `cloud_checkin.py` 和 `checkin.yml` 两个文件** → 在自己仓库 Settings → Secrets 配置 `WB_TOKEN` / `WB_UID` / `WB_DOMAIN` → Actions 页手动触发验证。
+
+同时如实告知以下代价，别只讲「关机也能签到」：
+
+- `accessToken` 是**完整账号凭据**，不是受限令牌；本项目没有降权方案。
+- 约 **30 天**过期（`expiresAt`），到期需重新提取；本机重新登录 / 换账号也可能让快照提前失效。
+- GitHub 在仓库 **60 天无任何活动**时会自动禁用 scheduled workflow，需去 Actions 页重新启用。
+- cron 在 UTC 16:00 整点（北京时间 00:00）属高负载时段，可能延迟或跳过；单次请求失败无重试、无补签，不配通知就会静默失败。
+- 签到接口为客户端逆向，云端从 GitHub 境外 IP 发起，存在账号风控风险（见 README 免责声明）。
+
+**默认推荐本地方案**：token 由客户端后台滚动续期、7 个触发点兜底、准点、凭据不出本机。详见 README「方案二」。
 
 ## 卸载
 

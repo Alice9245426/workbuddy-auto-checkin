@@ -22,7 +22,7 @@
 
 </div>
 
-> ⚠️ **Disclaimer**: This project is for technical learning and research only. Please comply with WorkBuddy's Terms of Service. The user assumes all consequences (including account risk control, credit loss, etc.).
+> ⚠️ **Disclaimer**: This project is for technical learning and research only. Please comply with WorkBuddy's Terms of Service. The check-in API is **reversed from the desktop client, not an official public API**; the cloud option calls it daily from GitHub Actions' overseas IPs, unlike your usual local login location. The user assumes all consequences (including account risk control, forced re-login, credit loss, etc.). **If you recommend this project to others, tell them about these risks first.**
 
 ---
 
@@ -31,7 +31,7 @@
 - [Features](#-features)
 - [Quick Start](#-quick-start)
 - [One Prompt to Set It Up (Skill)](#-one-prompt-to-set-it-up-skill)
-- [Share with a Friend: One Prompt for Your AI](#-share-with-a-friend-one-prompt-for-your-ai)
+- [Share with a Friend: A Safe Recommendation Guide](#-share-with-a-friend-a-safe-recommendation-guide)
 - [Project Structure](#-project-structure)
 - [How It Works: Encrypted Credentials](#-how-it-works-encrypted-credentials)
 - [Option 1: Local (Windows Task Scheduler)](#-option-1-local-windows-task-scheduler)
@@ -79,10 +79,15 @@ Or follow ["Option 1"](#-option-1-local-windows-task-scheduler) step by step.
 **Cloud only (PC-independent fallback)**:
 
 ```bash
-# 1. Fork this repository
-# 2. Configure WB_TOKEN / WB_UID / WB_DOMAIN in repo Settings → Secrets
-# 3. Trigger manually from the Actions tab to verify
+# 1. On a logged-in WorkBuddy machine, extract credentials
+python extract_token.py            # gives uid / domain / token
+
+# 2. Create a NEW private repo and upload ONLY cloud_checkin.py + checkin.yml
+# 3. Configure WB_TOKEN / WB_UID / WB_DOMAIN in Settings → Secrets
+# 4. Trigger manually from the Actions tab to verify
 ```
+
+> ⚠️ **Do the cloud option yourself**: `accessToken` is a full account credential — never delegate it to an AI, and **do not Fork this repo** (that pulls in the extractor and other unrelated files). Full steps in ["Option 2"](#-option-2-cloud-github-actions). If your PC is usually on, prefer the local option above.
 
 ---
 
@@ -118,30 +123,34 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1            
 
 ---
 
-## 🎁 Share with a Friend: One Prompt for Your AI
+## 🎁 Share with a Friend: A Safe Recommendation Guide
 
-> ⚠️ **Do not** just say "help me install workbuddy-auto-checkin from GitHub". See below.
+> ⚠️ **Do not** just say "help me install workbuddy-auto-checkin from GitHub", and **do not** let an AI handle your credentials. See below.
 
 ### Why that phrasing goes wrong
 
-1. **"Install" sends the AI down the wrong path**: this is not a pip / npm package (no `setup.py`, `pyproject.toml`, `package.json`). The local option means **running a one-shot script to register Windows scheduled tasks** (or loading `SKILL.md`); the cloud option means **fork into your own account + configure Secrets**. Neither is an "install".
+1. **"Install" sends the AI down the wrong path**: this is not a pip / npm package (no `setup.py`, `pyproject.toml`, `package.json`). The local option means **running a one-shot script to register Windows scheduled tasks** (or loading `SKILL.md`); the cloud option means **create a new private repo + upload only 2 files + configure Secrets**. Neither is an "install".
 2. **Many repos share this name**: a GitHub search for `workbuddy-auto-checkin` returns **30** same/near-name repos (plus an underscore variant `workbuddy_auto_checkin`), some with more stars than this one. With only the project name, an AI may well clone **someone else's repo**.
 3. **It really can land in someone else's project**: if the AI searches and forks/clones without an explicit owner, it will use whatever result it finds first. If your token ends up in a stranger's repo, you have handed your account credential to someone else's code — the single most important thing to avoid.
+4. **Never delegate cloud credentials to an AI**: the `accessToken` produced by `extract_token.py` is a **full account credential** (equivalent to your password), not a scoped token. Asking an AI to extract it, write Secrets, and trigger Actions hands that credential to an automated flow. This project's own `SKILL.md` "safety red lines" explicitly say **do not configure a user's token into any GitHub repo on their behalf**. Do the cloud option yourself.
 
-### ✅ The right prompt (copy the whole block)
+### ✅ What to actually send your friend
 
-The key is the **full author-qualified URL** plus an explicit "fork into my own account":
+**Recommend the local option by default** — no GitHub account, no credentials leaving the machine, token auto-renews via the client:
 
 ```text
-Please open https://github.com/Alice9245426/workbuddy-auto-checkin and,
-strictly following README "Option 2: Cloud (GitHub Actions)",
-set up WorkBuddy auto check-in under [my own GitHub account]:
+I made a small WorkBuddy auto check-in tool. The local option is easiest:
+on Windows, first run scripts/setup_windows.ps1 -SkipRegister as a self-check,
+then run it again without that flag to install. Everything stays on your machine,
+no GitHub account needed.
 
-1. Use only the URL above; do not use any similarly named repo found via search;
-2. Fork it into my own account, do not clone into someone else's project;
-3. On my machine, run the bundled python extract_token.py to get uid/domain/token;
-   write the token only into Secrets of MY OWN repo, never to any third party or public place;
-4. After setting WB_TOKEN / WB_UID / WB_DOMAIN, trigger a manual run from the Actions tab to verify.
+The cloud option stores a full account token, needs re-extraction every 30 days,
+uses a reversed API from GitHub's overseas IPs, and carries account risk-control
+risk. I would not start with it. If you do try it, follow README "Option 2"
+manually and do not hand it to an AI.
+
+Repo (plain link, no bold, no backticks):
+https://github.com/Alice9245426/workbuddy-auto-checkin
 ```
 
 ### Even simpler: just share the link
@@ -153,6 +162,8 @@ https://github.com/Alice9245426/workbuddy-auto-checkin
 ```
 
 > 💡 Do **not** wrap the URL in Markdown bold (`**`) or backticks — paste the plain address. Copying stray `**` into the address bar causes a GitHub 404.
+>
+> ⚠️ If your friend's AI assistant reads the repo, **give it only the link** — do not attach instructions like "deploy the cloud option / configure my Secrets". Your friend should follow ["Option 2"](#-option-2-cloud-github-actions) personally.
 
 ---
 
@@ -264,6 +275,8 @@ Windows Task Scheduler runs the script on a schedule; the script calls the offic
 
 Store `accessToken` in GitHub Secrets; GitHub Actions runs `cloud_checkin.py` on a schedule. **Fully independent of your local PC.**
 
+> ⚠️ **Know the cost before you start**: `extract_token.py` yields a **full account accessToken** (equivalent to your password), not a read-only or scoped token, and this project offers no way to reduce its privilege. The cloud calls a reversed API daily from GitHub Actions' overseas IPs, unlike your usual login location, which carries account risk-control risk. **Do these steps yourself; do not delegate them to an AI** (see the safety red lines in `SKILL.md`).
+
 ### Steps
 
 #### 1. Extract accessToken
@@ -271,8 +284,8 @@ Store `accessToken` in GitHub Secrets; GitHub Actions runs `cloud_checkin.py` on
 On a machine where you are **logged into WorkBuddy**, run the bundled extractor (auto-locates the client, decrypts in memory, no network, no plaintext printed by default):
 
 ```bash
-# 1. Clone this repo (or Fork then clone)
-git clone https://github.com/<you>/workbuddy-auto-checkin.git
+# 1. Clone this repo locally (only to run the extractor; no Fork needed)
+git clone https://github.com/Alice9245426/workbuddy-auto-checkin.git
 cd workbuddy-auto-checkin
 
 # 2. Extract uid / domain / accessToken / refreshToken
@@ -284,6 +297,8 @@ It prints your `uid` and `domain`, and writes `accessToken` (plus optional `refr
 > Requires Python 3. If WorkBuddy is installed in a non-default directory, the script auto-detects it from the registry; otherwise set `WORKBUDDY_EXE` to the full path of `WorkBuddy.exe`. Delete the two txt files after you are done.
 
 #### 2. Create a repo and upload
+
+> ⚠️ **Do not Fork this repo**: create a new private repo and upload **only the 2 files below**. Forking pulls in `extract_token.py`, `SKILL.md`, the installer and other files; if you later sync upstream updates, new code would run while holding your full account credential. The private repo only needs `cloud_checkin.py` and `checkin.yml`.
 
 ```bash
 gh repo create workbuddy-cloud-checkin --private
@@ -339,9 +354,21 @@ By default the cloud only stores `accessToken` (~30 days). If you also set `WB_R
 >
 > ⚠️ **Token competition**: the server rotates the refreshToken on every refresh. After the cloud refreshes daily, the old refreshToken stored in your local WorkBuddy client may become invalid, forcing the client to re-login on its next renewal. If you still use the client on this machine, pick one: let the client renew (skip `WB_REFRESH_TOKEN` in the cloud), or accept re-extracting the token occasionally.
 
-### Schedule note
+### Schedule and long-term maintenance
 
-`checkin.yml` cron `0 16 * * *` corresponds to **00:00 Beijing time** (UTC+8). GitHub Actions schedules are not exact and may lag a few to a dozen minutes.
+`checkin.yml` cron `0 16 * * *` corresponds to **00:00 Beijing time** (UTC+8). GitHub Actions schedules are not exact; the UTC top-of-hour is a peak-load window, so runs usually lag a few to a dozen minutes and may occasionally be skipped entirely.
+
+The cloud option uses a **one-time credential snapshot**. Each of the following can silently break your streak:
+
+| Issue | When | What to do |
+|---|---|---|
+| `accessToken` expires | ~**30 days** after extraction (`expiresAt` in local credentials) | Re-run `extract_token.py` and update `WB_TOKEN` |
+| Local re-login / account switch / client reinstall | Any time | The snapshot in Secrets may be revoked early; re-extract |
+| GitHub disables the schedule | **60 days** with no commit or repo activity | Re-enable the workflow in the Actions tab; push a commit occasionally |
+| A single request fails | Network blip / API 5xx | No retry, no catch-up that day; configure step 5 notifications to avoid silent failure |
+| Tencent changes the API or adds risk control | Unpredictable | See [FAQ](#-faq) |
+
+> 💡 If your **PC is usually on**, ["Option 1 (Local)"](#-option-1-local-windows-task-scheduler) is clearly more robust: the client renews the token in the background, 7 trigger points, exact 00:00, no GitHub account, and no credential ever leaves your machine.
 
 ---
 
@@ -352,7 +379,7 @@ By default the cloud only stores `accessToken` (~30 days). If you also set `WB_R
 | Depends on local PC | ✅ PC must be on | ❌ No |
 | Punctuality | ✅ Exact 00:00 | ⚠️ Lag (minutes) |
 | Maintenance | ✅ None (auto-renewal) | ⚠️ Re-extract accessToken every 30 days |
-| Stability | ✅ High | ⚠️ Subject to GitHub free-tier limits |
+| Stability | ✅ High | ⚠️ Token re-extraction, 60-day inactivity auto-disable, no retry on failure |
 | Best for | PC usually on | PC may be off for long |
 
 > 💡 You can run **both** together: whichever runs first checks in, the other idempotently skips. Credits are never doubled.
@@ -403,7 +430,7 @@ The API is reversed from the client and may break. If the script errors, re-reve
 
 <details>
 <summary><b>Q: Why does the workflow in the public repo error?</b></summary>
-The public repo has no Secrets (and should not), so scheduled runs fail with a missing `WB_TOKEN`. This is expected. Fork and configure Secrets in your own repo to use it.
+The public repo has no Secrets (and should not), so scheduled runs fail with a missing `WB_TOKEN`. This is expected. Create a new private repo and configure Secrets as described in ["Option 2"](#-option-2-cloud-github-actions).
 </details>
 
 ---

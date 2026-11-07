@@ -22,7 +22,7 @@
 
 </div>
 
-> ⚠️ **免责声明**：本项目仅供技术学习与交流，请遵守 WorkBuddy 的服务条款。使用产生的任何后果（包括账号风控、积分损失等）由使用者自行承担。
+> ⚠️ **免责声明**：本项目仅供技术学习与交流，请遵守 WorkBuddy 的服务条款。签到接口由桌面客户端逆向而来，**并非官方公开 API**；云端方案每天从 GitHub Actions 的境外 IP 发起请求，与本机日常登录地不同。使用产生的任何后果（包括账号风控、要求重新登录、积分损失等）由使用者自行承担。**若准备把本项目推荐给他人，请先如实告知以上风险。**
 
 ---
 
@@ -31,7 +31,7 @@
 - [功能特性](#-功能特性)
 - [快速开始](#-快速开始)
 - [用 Skill 一句话跑起来](#-用-skill-一句话跑起来)
-- [分享给朋友：一句话让 AI 帮你部署](#-分享给朋友一句话让-ai-帮你部署)
+- [分享给朋友：安全推荐指南](#-分享给朋友安全推荐指南)
 - [目录结构](#-目录结构)
 - [核心原理：登录态加密](#-核心原理登录态加密)
 - [方案一：本地（Windows 任务计划）](#-方案一本地windows-任务计划)
@@ -82,10 +82,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1
 # 1. 在已登录 WorkBuddy 的电脑上提取登录信息
 python extract_token.py            # 得到 uid / domain / token
 
-# 2. Fork 本仓库
+# 2. 新建私有仓库，只上传 cloud_checkin.py 和 checkin.yml 两个文件
 # 3. 在仓库 Settings → Secrets 配置 WB_TOKEN / WB_UID / WB_DOMAIN
 # 4. Actions 页手动触发验证
 ```
+
+> ⚠️ **云端方案请本人手动完成**：`accessToken` 是完整账号凭据，不要交给 AI 代劳；也**不要 Fork 本仓库**（会把提取脚本等无关文件一并带进去）。完整步骤见 [「方案二」](#-方案二云端github-actions)。若电脑经常开机，优先用上面的本地方案。
 
 ---
 
@@ -121,29 +123,32 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1            
 
 ---
 
-## 🎁 分享给朋友：一句话让 AI 帮你部署
+## 🎁 分享给朋友：安全推荐指南
 
-> ⚠️ **不要**只说「帮我安装 GitHub 上的 workbuddy-auto-checkin」。原因见下。
+> ⚠️ **不要**只说「帮我安装 GitHub 上的 workbuddy-auto-checkin」，也**不要**让 AI 替你处理账号凭据。原因见下。
 
 ### 为什么这句话会出问题
 
-1. **「安装」这个词会跑偏**：本项目不是 pip / npm 包，也没有 `setup.py` / `pyproject.toml` / `package.json`。本地方案的正确动作是**运行一键脚本注册 Windows 计划任务**（或加载 `SKILL.md`），云端方案是 **Fork 到自己的账号 + 配置 Secrets**——都不是「安装」。
+1. **「安装」这个词会跑偏**：本项目不是 pip / npm 包，也没有 `setup.py` / `pyproject.toml` / `package.json`。本地方案的正确动作是**运行一键脚本注册 Windows 计划任务**（或加载 `SKILL.md`），云端方案是**新建私有仓库 + 只上传 2 个文件 + 配置 Secrets**——都不是「安装」。
 2. **同名仓库非常多**：GitHub 上搜 `workbuddy-auto-checkin` 有 **30 个**同名或近名仓库（还有下划线版 `workbuddy_auto_checkin`），其中有的 stars 比本项目更高。只报项目名，AI 很可能 clone 到**别人的同名项目**。
 3. **确实可能"落到别人的项目"**：AI 若按字面去搜索并 fork/clone，没有明确指定作者，就会落到它搜到的第一个结果。你的 token 一旦配到陌生仓库，等于把账号凭据交给了别人的代码，这是最需要避免的风险。
+4. **云端凭据不该交给 AI 代劳**：`extract_token.py` 解出的 `accessToken` 是**完整账号凭据**（等同账号密码），不是受限令牌。让 AI 代跑提取、写 Secrets、触发 Actions，等于把账号凭据交给一条自动执行的流程；本项目 `SKILL.md` 的「安全红线」也明确要求**不要替用户把 token 配置到任何 GitHub 仓库**。云端方案请本人手动完成。
 
-### ✅ 正确的说法（整段复制给朋友）
+### ✅ 推荐给朋友的正确说法
 
-关键是**带完整作者的 URL**，并明确「Fork 到我自己的账号」：
+**默认推荐本地方案**——无需 GitHub 账号、无需交出任何凭据、token 由客户端自动滚动续期：
 
 ```text
-请打开 https://github.com/Alice9245426/workbuddy-auto-checkin ，
-严格按 README 的「方案二：云端（GitHub Actions）」帮我在【我自己的 GitHub 账号】下部署 WorkBuddy 自动签到：
+我做了个 WorkBuddy 自动签到的小工具，本地方案最省事：
+Windows 上先跑 scripts/setup_windows.ps1 -SkipRegister 自检，
+通过后再去掉该参数正式安装，全程本机、不用 GitHub 账号。
 
-1. 只使用上面这个仓库地址，不要用搜索到的任何同名仓库；
-2. 把它 Fork 到我自己的账号，不要 clone 到别人的项目；
-3. 在我本机运行仓库自带的 python extract_token.py 得到 uid/domain/token，
-   token 只写进我自己仓库的 Secrets，不要发到任何第三方或公开场合；
-4. 配好 WB_TOKEN / WB_UID / WB_DOMAIN 后，在 Actions 页手动触发验证一次。
+云端方案要存完整账号 token、30 天要重提一次，接口是逆向的，
+每天从 GitHub 境外 IP 签到，有账号风控风险，不建议一上来就用；
+如果要试，请自己照 README「方案二」手动做，别交给 AI。
+
+仓库（纯链接，别加粗、别用反引号包）：
+https://github.com/Alice9245426/workbuddy-auto-checkin
 ```
 
 ### 更省心：直接甩链接
@@ -155,6 +160,8 @@ https://github.com/Alice9245426/workbuddy-auto-checkin
 ```
 
 > 💡 发链接时**不要**用 Markdown 加粗（`**`）或反引号把 URL 包起来，直接贴纯地址——复制时把 `**` 一起带上会导致 GitHub 404。
+>
+> ⚠️ 如果要让朋友的 AI 助手读仓库，**只给链接**，不要附「帮我部署云端方案 / 帮我配置 Secrets」这类指令。云端步骤请朋友本人照 [「方案二」](#-方案二云端github-actions) 完成。
 
 ---
 
@@ -266,6 +273,8 @@ Content-Type: application/json
 
 把 `accessToken` 存到 GitHub Secrets，GitHub Actions 每天定时跑 `cloud_checkin.py` 调接口签到。**完全不依赖本地电脑**。
 
+> ⚠️ **先看清代价再开始**：`extract_token.py` 解出的是**完整账号 accessToken**（等同账号密码），不是只读或受限令牌，本项目也没有任何降权方案。云端每天从 GitHub Actions 的境外 IP 调用逆向接口，与你本机日常登录地不同，存在账号风控风险。**以下步骤请本人手动完成，不要交给 AI 代劳**（见 `SKILL.md` 安全红线）。
+
 ### 部署步骤
 
 #### 1. 提取 accessToken
@@ -273,8 +282,8 @@ Content-Type: application/json
 在**已登录 WorkBuddy 的电脑上**运行本仓库的提取脚本（自动定位客户端、内存解密、不联网、默认不打印明文）：
 
 ```bash
-# 1. 下载本仓库（Fork 后再 clone 也行）
-git clone https://github.com/<you>/workbuddy-auto-checkin.git
+# 1. 下载本仓库到本机（只为了跑提取脚本，不需要 Fork）
+git clone https://github.com/Alice9245426/workbuddy-auto-checkin.git
 cd workbuddy-auto-checkin
 
 # 2. 提取 uid / domain / accessToken / refreshToken
@@ -286,6 +295,8 @@ python extract_token.py
 > 需要 Python 3（用系统自带 `python` 即可）。若 WorkBuddy 装在非默认目录，脚本会自动从注册表探测；仍找不到时可用 `WORKBUDDY_EXE` 环境变量指定 `WorkBuddy.exe` 的完整路径。提取完请及时删除这两个 txt。
 
 #### 2. 创建仓库并上传
+
+> ⚠️ **不要 Fork 本仓库**：请新建私有仓库，并**只上传下面这 2 个文件**。Fork 会把 `extract_token.py`、`SKILL.md`、安装脚本等一并带进仓库，将来若同步上游更新，新代码就会带着你的完整账号凭据运行。私有仓库里只需要 `cloud_checkin.py` 和 `checkin.yml`。
 
 ```bash
 gh repo create workbuddy-cloud-checkin --private
@@ -341,9 +352,21 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 >
 > ⚠️ **令牌竞争提醒**：服务端每次刷新都会轮换 refreshToken。云端每天刷新后，本机 WorkBuddy 客户端里保存的旧 refreshToken 可能失效，导致客户端下次自动续期失败、需要重新登录。若本机仍经常使用客户端，建议二选一：只走客户端自动续期（云端不配 `WB_REFRESH_TOKEN`），或接受偶尔重新提取 token。
 
-### 定时说明
+### 定时说明与长期维护
 
-`checkin.yml` 里的 cron `0 16 * * *` 对应 **北京时间 00:00**（UTC+8）。GitHub Actions 的 schedule 不保证准点，通常有几到十几分钟延迟。
+`checkin.yml` 里的 cron `0 16 * * *` 对应 **北京时间 00:00**（UTC+8）。GitHub Actions 的 schedule 不保证准点，UTC 整点是负载高峰，通常有几到十几分钟延迟，极端情况下可能跳过当次运行。
+
+云端方案用的是「一次性凭据快照」，下面几件事会让签到**静默中断**，建议设好提醒：
+
+| 事项 | 时间点 | 处理 |
+|---|---|---|
+| `accessToken` 过期 | 提取后约 **30 天**（对应登录态里的 `expiresAt`） | 重新运行 `extract_token.py`，更新 `WB_TOKEN` |
+| 本机重新登录 / 换账号 / 重装客户端 | 随时 | Secrets 里的快照可能提前失效，需重新提取 |
+| GitHub 自动禁用 schedule | 仓库 **60 天无任何提交或活动** | 到 Actions 页重新启用工作流；平时偶尔推一次提交即可 |
+| 单次请求失败 | 网络抖动 / 接口 5xx | 脚本无重试，当天不再补签；建议配置第 5 步的通知渠道，避免静默失败 |
+| 腾讯改接口或加风控 | 不可预测 | 见 [常见问题](#-常见问题) |
+
+> 💡 如果**电脑经常开机**，[方案一（本地）](#-方案一本地windows-任务计划) 明显更稳：token 由客户端后台滚动续期、7 个触发点兜底、准点 00:00，不需要 GitHub 账号，也不涉及凭据外存。
 
 ---
 
@@ -354,7 +377,7 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 | 依赖本地电脑 | ✅ 需要电脑开机 | ❌ 不需要 |
 | 准点性 | ✅ 精确 00:00 | ⚠️ 有延迟（几分钟到十几分钟） |
 | 维护成本 | ✅ 零（token 自动续期） | ⚠️ accessToken 30 天要重提 |
-| 稳定性 | ✅ 高 | ⚠️ 受 GitHub 免费版配额影响 |
+| 稳定性 | ✅ 高 | ⚠️ token 到期需重提、60 天无活动自动禁用 schedule、单次失败无重试 |
 | 推荐场景 | 电脑常开 | 电脑可能长期关机 |
 
 > 💡 两者可**同时使用**：同一天谁先到谁签，另一个幂等跳过，积分不会重复。
@@ -405,7 +428,7 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 <details>
 <summary><b>Q：为什么公开仓库的 workflow 会报错？</b></summary>
-公开仓库未配置 Secrets（也不应配置），定时触发会因缺 `WB_TOKEN` 失败，属预期行为。请 Fork 后在自己的仓库配置 Secrets 使用。
+公开仓库未配置 Secrets（也不应配置），定时触发会因缺 `WB_TOKEN` 失败，属预期行为。请按 [「方案二」](#-方案二云端github-actions) 新建私有仓库并配置 Secrets 使用。
 </details>
 
 ---
