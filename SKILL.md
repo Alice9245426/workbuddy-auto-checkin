@@ -4,7 +4,7 @@ slug: workbuddy-auto-checkin
 displayName: "WorkBuddy 本地云端自动签到"
 display_name: "WorkBuddy 本地云端自动签到"
 display_name_en: "WorkBuddy Auto Check-in (Local + Cloud)"
-version: "1.0.0"
+version: "1.1.0"
 summary: "在本机一键部署 WorkBuddy 每日自动签到（Windows 计划任务，不依赖客户端常驻），并说明云端 GitHub Actions 方案的配置入口"
 description_zh: "配置 WorkBuddy 每日自动签到领积分。当用户说「帮我配置自动签到」「让签到全自动」「装一下自动签到」「每天自动领积分」「检查签到有没有在跑」，或提到本地/云端签到、计划任务、断签、连续签到天数时使用。本地方案通过 Windows 任务计划程序 + 本机登录态解密实现，全程本机、无需 GitHub 账号、无需授权、不耗 AI token。云端方案需要用户自己的 GitHub 账号与 Secrets，不能自动代劳，应引导到 README。"
 description_en: "Set up WorkBuddy daily automatic check-in. Use when the user says 'set up auto check-in', 'make check-in fully automatic', 'install auto signin', 'claim points automatically every day', 'check if auto check-in is running', or mentions local/cloud check-in, scheduled tasks, broken streaks, or consecutive check-in days. The local option uses Windows Task Scheduler plus local credential decryption; it runs entirely on the machine with no GitHub account, no authorization, and no AI token cost. The cloud option needs the user's own GitHub account and Secrets and cannot be done on their behalf; point them to the README."
