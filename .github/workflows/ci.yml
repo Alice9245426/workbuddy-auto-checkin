@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 语法编译检查
+        run: python -m py_compile cloud_checkin.py
+
+      - name: 导入检查
+        run: python -c "import cloud_checkin; print('import ok')"
+
+      - name: 无 token 干跑自检（期望退出码 2）
+        run: |
+          python cloud_checkin.py
+          code=$?
+          if [ "$code" -ne 2 ]; then
+            echo "期望无 token 时退出码为 2，实际 $code"
+            exit 1
+          fi
+          echo "自检通过：无 token 时正确返回退出码 2"
