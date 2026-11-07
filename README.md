@@ -30,6 +30,7 @@
 
 - [功能特性](#-功能特性)
 - [快速开始](#-快速开始)
+- [分享给朋友：一句话让 AI 帮你部署](#-分享给朋友一句话让-ai-帮你部署)
 - [目录结构](#-目录结构)
 - [核心原理：登录态加密](#-核心原理登录态加密)
 - [方案一：本地（Windows 任务计划）](#-方案一本地windows-任务计划)
@@ -84,6 +85,43 @@ python extract_token.py            # 得到 uid / domain / token
 # 3. 在仓库 Settings → Secrets 配置 WB_TOKEN / WB_UID / WB_DOMAIN
 # 4. Actions 页手动触发验证
 ```
+
+---
+
+## 🎁 分享给朋友：一句话让 AI 帮你部署
+
+> ⚠️ **不要**只说「帮我安装 GitHub 上的 workbuddy-auto-checkin」。原因见下。
+
+### 为什么这句话会出问题
+
+1. **它不是能"安装"的软件包**：仓库里没有 `SKILL.md`、`setup.py`、`pyproject.toml`、`package.json`——既不是 WorkBuddy 技能，也不是 pip / npm 包。它是一套「Python 脚本 + GitHub Actions 配置」，正确动作是 **Fork 到自己的账号 + 配置 Secrets**，而不是"安装"到某个项目里。
+2. **同名仓库非常多**：GitHub 上搜 `workbuddy-auto-checkin` 有 **30 个**同名或近名仓库（还有下划线版 `workbuddy_auto_checkin`），其中有的 stars 比本项目更高。只报项目名，AI 很可能 clone 到**别人的同名项目**。
+3. **确实可能"落到别人的项目"**：AI 若按字面去搜索并 fork/clone，没有明确指定作者，就会落到它搜到的第一个结果。你的 token 一旦配到陌生仓库，等于把账号凭据交给了别人的代码，这是最需要避免的风险。
+
+### ✅ 正确的说法（整段复制给朋友）
+
+关键是**带完整作者的 URL**，并明确「Fork 到我自己的账号」：
+
+```text
+请打开 https://github.com/Alice9245426/workbuddy-auto-checkin ，
+严格按 README 的「方案二：云端（GitHub Actions）」帮我在【我自己的 GitHub 账号】下部署 WorkBuddy 自动签到：
+
+1. 只使用上面这个仓库地址，不要用搜索到的任何同名仓库；
+2. 把它 Fork 到我自己的账号，不要 clone 到别人的项目；
+3. 在我本机运行仓库自带的 python extract_token.py 得到 uid/domain/token，
+   token 只写进我自己仓库的 Secrets，不要发到任何第三方或公开场合；
+4. 配好 WB_TOKEN / WB_UID / WB_DOMAIN 后，在 Actions 页手动触发验证一次。
+```
+
+### 更省心：直接甩链接
+
+把仓库链接发给朋友，让 TA 自己照 README 做，或把链接贴给 TA 的 AI 助手：
+
+```text
+https://github.com/Alice9245426/workbuddy-auto-checkin
+```
+
+> 💡 发链接时**不要**用 Markdown 加粗（`**`）或反引号把 URL 包起来，直接贴纯地址——复制时把 `**` 一起带上会导致 GitHub 404。
 
 ---
 
