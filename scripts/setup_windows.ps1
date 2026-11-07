@@ -47,7 +47,8 @@ function Say([string]$msg, [string]$color = "Gray") { Write-Host $msg -Foregroun
 
 function Find-Pythonw {
     $c = (Get-Command pythonw -ErrorAction SilentlyContinue).Source
-    if ($c -and (Test-Path -LiteralPath $c)) { return $c }
+    # Skip the Windows Store stub (0-byte / App Execution Alias) for pythonw too.
+    if ($c -and -not ($c -like "*WindowsApps*") -and (Test-Path -LiteralPath $c)) { return $c }
 
     $py = (Get-Command python -ErrorAction SilentlyContinue).Source
     if ($py) {

@@ -53,7 +53,7 @@
 | ☁️ **Cloud option** | Runs on GitHub Actions, works even when your PC is off |
 | 🔁 **Idempotent** | Checks today's status first; skips if already checked in |
 | 🔐 **Breaks credential encryption** | Provides a complete approach to decrypt WorkBuddy's new envelope-encrypted tokens |
-| 🛡️ **Zero credential leak** | Tokens stay in memory / env vars / GitHub Secrets, never printed or written to disk |
+| 🛡️ **Zero credential leak** | Check-in script keeps tokens in memory / env vars / GitHub Secrets and never prints them; the extractor only writes two local txt files that you delete right after |
 | 🔄 **Auto-renewal** | Optional: with a refreshToken, refresh the accessToken before check-in (extends cloud validity to ~60 days) |
 | 📣 **Result notification** | Optional: push results to Telegram / ServerChan (WeChat) / generic webhook |
 | 🤖 **WorkBuddy Skill** | Ships `SKILL.md`: one sentence ("set up auto check-in") lets an AI deploy the local option |
@@ -215,6 +215,7 @@ Reversed from the desktop client (domain `copilot.tencent.com`):
 |---|---|
 | Query status | `POST /v2/billing/meter/checkin-activity-status` |
 | Perform check-in | `POST /v2/billing/meter/daily-checkin` |
+| Refresh accessToken | `POST /v2/plugin/auth/token/refresh` (with `X-Refresh-Token` header) |
 
 Headers (`domain` is usually `www.workbuddy.cn`):
 
@@ -335,6 +336,8 @@ By default the cloud only stores `accessToken` (~30 days). If you also set `WB_R
 | `WB_REFRESH_TOKEN` | refreshToken (extracted alongside accessToken from local credentials) |
 
 > ⚠️ The refresh endpoint is reversed from the client and may break; on failure the script falls back to the original `WB_TOKEN`, so the main flow is unaffected. Note the refreshToken itself also expires (~60 days) and must be re-extracted.
+>
+> ⚠️ **Token competition**: the server rotates the refreshToken on every refresh. After the cloud refreshes daily, the old refreshToken stored in your local WorkBuddy client may become invalid, forcing the client to re-login on its next renewal. If you still use the client on this machine, pick one: let the client renew (skip `WB_REFRESH_TOKEN` in the cloud), or accept re-extracting the token occasionally.
 
 ### Schedule note
 

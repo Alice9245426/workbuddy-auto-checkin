@@ -23,7 +23,9 @@ from datetime import datetime, timezone, timedelta
 ENDPOINT = "https://copilot.tencent.com"
 STATUS_EP = "/v2/billing/meter/checkin-activity-status"
 CHECKIN_EP = "/v2/billing/meter/daily-checkin"
-REFRESH_EP = "/v2/auth/token/refresh"
+# 客户端 prefixPath 为 /plugin（WorkBuddy 5.9.x 实测：/v2/auth/token/refresh 返回 404，
+# /v2/plugin/auth/token/refresh 才是真实路由）。
+REFRESH_EP = "/v2/plugin/auth/token/refresh"
 
 BEIJING = timezone(timedelta(hours=8))
 
@@ -88,24 +90,25 @@ def _pick(obj, *keys):
 
 
 def _refresh_token(refresh_token, access_token, uid, domain):
-    """用 refreshToken 刷新 accessToken，返回 (新 accessToken, 新 refreshToken)。
+    """用 refreshToken 刷新 accessToken，返回 (新 accessToken, 新 refreshToken, HTTP 状态码)。
 
-    刷新接口从客户端逆向而来：POST /v2/auth/token/refresh，body 空对象，
+    刷新接口从客户端逆向而来：POST /v2/plugin/auth/token/refresh，body 空对象，
     请求头额外带 X-Refresh-Token + X-Auth-Refresh-Source: plugin。
-    失败返回 (None, None)，由调用方回退到原 token。
+    失败返回 (None, None, http_code)，由调用方回退到原 token；http_code
+    仅用于输出诊断，绝不包含任何 token 内容。
     """
     h = _headers(access_token, uid, domain)
     h["X-Refresh-Token"] = refresh_token
     h["X-Auth-Refresh-Source"] = "plugin"
     code, body = _post(REFRESH_EP, h)
     if code != 200:
-        return None, None
+        return None, None, code
     data = body.get("data") if isinstance(body, dict) else None
     if not isinstance(data, dict):
         data = body
     new_access = data.get("accessToken")
     new_refresh = data.get("refreshToken")
-    return (new_access or None), (new_refresh or None)
+    return (new_access or None), (new_refresh or None), code
 
 
 def _notify(title, body_text):
@@ -152,11 +155,15 @@ def main():
 
     # 0. 可选：先刷新 accessToken
     refreshed = False
+    refresh_error = None
     if refresh:
-        new_access, _new_refresh = _refresh_token(refresh, token, uid, domain)
+        new_access, _new_refresh, refresh_http = _refresh_token(refresh, token, uid, domain)
         if new_access:
             token = new_access
             refreshed = True
+        else:
+            refresh_error = "http=%s" % refresh_http
+    extra = {"refresh_error": refresh_error} if refresh_error else {}
 
     now = datetime.now(BEIJING).strftime("%Y-%m-%d %H:%M:%S")
     h = _headers(token, uid, domain)
@@ -165,9 +172,19 @@ def main():
     st_code, st = _post(STATUS_EP, h)
     if st_code != 200 or _pick(st, "code") not in (0, "0", None):
         msg = "状态查询失败 (http=%s)" % st_code
-        print(json.dumps({"ok": False, "error": msg, "body": st}, ensure_ascii=False))
+        print(json.dumps({**{"ok": False, "error": msg, "body": st}, **extra}, ensure_ascii=False))
         _notify("WorkBuddy 签到失败", msg)
         return 3
+
+    # 1.1 活动未开启：明确跳过，不误报为“签到失败”
+    if _pick(st, "active") is False:
+        msg = "签到活动未开启，跳过"
+        print(json.dumps({**{
+            "ok": True, "action": "skip", "message": msg,
+            "refreshed": refreshed, "time": now,
+        }, **extra}, ensure_ascii=False))
+        _notify("WorkBuddy 签到（活动未开启）", msg)
+        return 0
 
     checked = bool(_pick(st, "today_checked_in", "todayCheckedIn") or False)
     streak = _pick(st, "streak_days", "streakDays")
@@ -175,11 +192,11 @@ def main():
 
     if checked:
         msg = "今日已签到（连签 %s 天，累计 %s 积分）" % (streak, total)
-        print(json.dumps({
+        print(json.dumps({**{
             "ok": True, "action": "skip", "message": "今天已签到",
             "streak_days": streak, "total_credits": total,
             "refreshed": refreshed, "time": now,
-        }, ensure_ascii=False))
+        }, **extra}, ensure_ascii=False))
         _notify("WorkBuddy 签到（已签）", msg)
         return 0
 
@@ -189,21 +206,22 @@ def main():
     if ck_code == 200 and ck_code_num in (0, "0", None):
         gained = _pick(ck, "today_credit", "credit", "points", "reward") or _pick(st, "today_credit", "daily_credit")
         msg = "签到成功：+%s 积分（连签 %s 天）" % (gained, _pick(ck, "streak_days") or streak)
-        print(json.dumps({
+        print(json.dumps({**{
             "ok": True, "action": "checkin", "message": "签到成功",
             "today_credit": gained, "streak_days": _pick(ck, "streak_days") or streak,
             "refreshed": refreshed, "time": now,
-        }, ensure_ascii=False))
+        }, **extra}, ensure_ascii=False))
         _notify("WorkBuddy 签到成功", msg)
         return 0
     elif ck_code_num == 10001 or "已签到" in str(_pick(ck, "msg", "message") or ""):
         msg = "今日已签到（幂等跳过）"
-        print(json.dumps({"ok": True, "action": "skip", "message": msg, "refreshed": refreshed, "time": now}, ensure_ascii=False))
+        print(json.dumps({**{"ok": True, "action": "skip", "message": msg,
+                             "refreshed": refreshed, "time": now}, **extra}, ensure_ascii=False))
         _notify("WorkBuddy 签到（已签）", msg)
         return 0
     else:
         msg = "签到失败 (http=%s)" % ck_code
-        print(json.dumps({"ok": False, "error": msg, "body": ck}, ensure_ascii=False))
+        print(json.dumps({**{"ok": False, "error": msg, "body": ck}, **extra}, ensure_ascii=False))
         _notify("WorkBuddy 签到失败", msg)
         return 3
 

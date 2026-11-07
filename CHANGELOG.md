@@ -2,6 +2,19 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/) 格式，并使用 [Semantic Versioning](https://semver.org/lang/zh-CN/) 版本号。
 
+## [1.1.1] - 2026-11-07
+
+### 修复（全面审计 + 真机/真实接口验证）
+
+- `cloud_checkin.py`：修复刷新接口路径（`/v2/auth/token/refresh` 在真实网关上 404，客户端实际路由为 `/v2/plugin/auth/token/refresh`，经真机探测验证）；此前「自动续期」从未真正生效，仅靠静默回退掩盖。
+- `.gitignore` 补充忽略 `wb_refresh_token.txt`：提取脚本会写入两个 txt，此前只忽略了其一，`git add .` 可能误提交 refreshToken。
+- `cloud_checkin.py`：签到活动未开启（`active: false`）时明确跳过并报告，不再误报为「签到失败」。
+- `cloud_checkin.py`：配置 `WB_REFRESH_TOKEN` 但刷新失败时，输出附带 `refresh_error`（仅 HTTP 状态码，不含任何 token），便于排查。
+- `extract_token.py`：登录态文件损坏或无法读取时给出友好提示，不再抛出原始堆栈。
+- `setup_windows.ps1`：`pythonw` 探测与 `python` 一致，跳过 Microsoft Store 的 0 字节占位别名，避免误导新用户。
+- 特性表「零敏感信息落盘」措辞修正为与提取脚本实际行为一致（中英双语）。
+- `SKILL.md` 版本号与仓库版本对齐（1.1.1）。
+
 ## [1.1.0] - 2026-11-07
 
 ### 新增

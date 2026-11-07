@@ -277,8 +277,14 @@ def main():
     if not os.path.isfile(session_path):
         raise SystemExit("未找到登录态文件，请先登录一次 WorkBuddy 客户端。\n预期路径：" + session_path)
 
-    with open(session_path, encoding="utf-8") as f:
-        session = json.load(f)
+    try:
+        with open(session_path, encoding="utf-8") as f:
+            session = json.load(f)
+    except (ValueError, OSError) as e:
+        raise SystemExit(
+            "登录态文件读取失败（%s: %s），请重新登录一次 WorkBuddy 客户端。" % (type(e).__name__, e))
+    if not isinstance(session, dict):
+        raise SystemExit("登录态文件格式异常，请重新登录一次 WorkBuddy 客户端。")
 
     auth = session.get("auth") or {}
     account = session.get("account") or {}

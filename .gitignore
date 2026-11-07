@@ -46,6 +46,7 @@ signin.log
 *.log
 workbuddy-desktop.info
 wb_cloud_token.txt
+wb_refresh_token.txt
 
 # Coverage / test
 .coverage

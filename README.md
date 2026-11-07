@@ -53,7 +53,7 @@
 | ☁️ **云端方案** | GitHub Actions 定时运行，不依赖本地电脑，关机也能签到 |
 | 🔁 **幂等安全** | 先查当天是否已签，已签则跳过，不会重复领取 |
 | 🔐 **破解登录态加密** | 新版 WorkBuddy 对本地 token 做了信封加密，本项目给出客户端运行时内解密的完整思路 |
-| 🛡️ **零敏感信息落盘** | token 全程走内存 / 环境变量 / GitHub Secrets，不打印、不落盘 |
+| 🛡️ **零敏感信息泄露** | 签到脚本的 token 全程走内存 / 环境变量 / GitHub Secrets，不打印；提取脚本仅在本机临时写两个 txt（用完即删） |
 | 🔄 **自动续期** | 可选：配置 refreshToken 后，签到前自动刷新 accessToken，云端有效期从 30 天延长到约 60 天 |
 | 📣 **结果通知** | 可选：签到结果推送到 Telegram / Server酱（微信）/ 通用 webhook |
 | 🤖 **WorkBuddy Skill** | 附带 `SKILL.md`，说一句「帮我配置自动签到」即可由 AI 完成本地方案部署 |
@@ -217,6 +217,7 @@ ELECTRON_RUN_AS_NODE=1 "WorkBuddy.exe" -e <js>
 |---|---|
 | 查签到状态 | `POST /v2/billing/meter/checkin-activity-status` |
 | 执行签到 | `POST /v2/billing/meter/daily-checkin` |
+| 刷新 accessToken | `POST /v2/plugin/auth/token/refresh`（请求头带 `X-Refresh-Token`） |
 
 请求头（`domain` 为你的登录域，通常是 `www.workbuddy.cn`）：
 
@@ -337,6 +338,8 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 | `WB_REFRESH_TOKEN` | refreshToken（与 accessToken 一起从本地登录态提取） |
 
 > ⚠️ 刷新接口从客户端逆向，存在失效风险；刷新失败时会自动回退用原 `WB_TOKEN` 签到，不影响主流程。注意 refreshToken 本身也会过期（约 60 天），到期后仍需重新提取。
+>
+> ⚠️ **令牌竞争提醒**：服务端每次刷新都会轮换 refreshToken。云端每天刷新后，本机 WorkBuddy 客户端里保存的旧 refreshToken 可能失效，导致客户端下次自动续期失败、需要重新登录。若本机仍经常使用客户端，建议二选一：只走客户端自动续期（云端不配 `WB_REFRESH_TOKEN`），或接受偶尔重新提取 token。
 
 ### 定时说明
 
