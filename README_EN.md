@@ -30,6 +30,7 @@
 
 - [Features](#-features)
 - [Quick Start](#-quick-start)
+- [Share with a Friend: One Prompt for Your AI](#-share-with-a-friend-one-prompt-for-your-ai)
 - [Project Structure](#-project-structure)
 - [How It Works: Encrypted Credentials](#-how-it-works-encrypted-credentials)
 - [Option 1: Local (Windows Task Scheduler)](#-option-1-local-windows-task-scheduler)
@@ -81,6 +82,44 @@ python signin.py status
 # 2. Configure WB_TOKEN / WB_UID / WB_DOMAIN in repo Settings → Secrets
 # 3. Trigger manually from the Actions tab to verify
 ```
+
+---
+
+## 🎁 Share with a Friend: One Prompt for Your AI
+
+> ⚠️ **Do not** just say "help me install workbuddy-auto-checkin from GitHub". See below.
+
+### Why that phrasing goes wrong
+
+1. **It is not an installable package**: there is no `SKILL.md`, `setup.py`, `pyproject.toml`, or `package.json` — it is neither a WorkBuddy skill nor a pip / npm package. It is a set of "Python script + GitHub Actions config"; the correct action is **fork it into your own account + configure Secrets**, not "install" it into some project.
+2. **Many repos share this name**: a GitHub search for `workbuddy-auto-checkin` returns **30** same/near-name repos (plus an underscore variant `workbuddy_auto_checkin`), some with more stars than this one. With only the project name, an AI may well clone **someone else's repo**.
+3. **It really can land in someone else's project**: if the AI searches and forks/clones without an explicit owner, it will use whatever result it finds first. If your token ends up in a stranger's repo, you have handed your account credential to someone else's code — the single most important thing to avoid.
+
+### ✅ The right prompt (copy the whole block)
+
+The key is the **full author-qualified URL** plus an explicit "fork into my own account":
+
+```text
+Please open https://github.com/Alice9245426/workbuddy-auto-checkin and,
+strictly following README "Option 2: Cloud (GitHub Actions)",
+set up WorkBuddy auto check-in under [my own GitHub account]:
+
+1. Use only the URL above; do not use any similarly named repo found via search;
+2. Fork it into my own account, do not clone into someone else's project;
+3. On my machine, run the bundled python extract_token.py to get uid/domain/token;
+   write the token only into Secrets of MY OWN repo, never to any third party or public place;
+4. After setting WB_TOKEN / WB_UID / WB_DOMAIN, trigger a manual run from the Actions tab to verify.
+```
+
+### Even simpler: just share the link
+
+Send the repo link to your friend — they can follow the README, or paste the link into their own AI assistant:
+
+```text
+https://github.com/Alice9245426/workbuddy-auto-checkin
+```
+
+> 💡 Do **not** wrap the URL in Markdown bold (`**`) or backticks — paste the plain address. Copying stray `**` into the address bar causes a GitHub 404.
 
 ---
 
