@@ -17,11 +17,28 @@ jobs:
   checkin:
     runs-on: ubuntu-latest
     steps:
+      # 本仓库是模板仓库，自身没有 Secrets：跳过签到，避免每天发失败通知。
+      # 把这两个文件复制到自己的私有仓库、配好 WB_TOKEN 后，这一步自然放行。
+      # secrets 不能写进 if:，故先导出到 GITHUB_OUTPUT。
+      - name: Check Secrets
+        id: guard
+        env:
+          _WB_TOKEN: ${{ secrets.WB_TOKEN }}
+        run: |
+          if [ -z "$_WB_TOKEN" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::WB_TOKEN 未配置（模板仓库或尚未完成配置），跳过本次签到"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
       - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != 'true'
         with:
           python-version: "3.12"
       - name: Run checkin
+        if: steps.guard.outputs.skip != 'true'
         env:
           WB_TOKEN: ${{ secrets.WB_TOKEN }}
           WB_UID: ${{ secrets.WB_UID }}
