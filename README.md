@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" width="140" alt="WorkBuddy Auto Check-in logo" />
 
-# 🔧 WorkBuddy 本地/云端自动签到
+# 🔧 WorkBuddy 自动签到
 
 **让 WorkBuddy（腾讯 AI 编程助手）的每日签到领积分全自动完成，无需手动打开客户端。**
 
@@ -77,9 +77,12 @@ python signin.py status
 **想不依赖电脑（云端兜底）**：
 
 ```bash
-# 1. Fork 本仓库
-# 2. 在仓库 Settings → Secrets 配置 WB_TOKEN / WB_UID / WB_DOMAIN
-# 3. Actions 页手动触发验证
+# 1. 在已登录 WorkBuddy 的电脑上提取登录信息
+python extract_token.py            # 得到 uid / domain / token
+
+# 2. Fork 本仓库
+# 3. 在仓库 Settings → Secrets 配置 WB_TOKEN / WB_UID / WB_DOMAIN
+# 4. Actions 页手动触发验证
 ```
 
 ---
@@ -89,6 +92,7 @@ python signin.py status
 ```
 workbuddy-auto-checkin/
 ├── cloud_checkin.py              # 云端签到脚本（纯 Python 标准库，零依赖，含续期+通知）
+├── extract_token.py              # 登录信息提取脚本（配云端 Secrets 用，一条命令）
 ├── .github/
 │   ├── workflows/
 │   │   ├── checkin.yml           # 签到定时配置（每日北京时间 00:00）
@@ -191,7 +195,20 @@ Content-Type: application/json
 
 #### 1. 提取 accessToken
 
-本地方案脚本（88lin）已具备解密能力，可写一个 3 行脚本复用其解密函数导出 token（核心是调 `loggerGet()` 解 `$wbEncrypted`），得到一段 JWT 形式的 `accessToken` 与你的 `uid`、`domain`。
+在**已登录 WorkBuddy 的电脑上**运行本仓库的提取脚本（自动定位客户端、内存解密、不联网、默认不打印明文）：
+
+```bash
+# 1. 下载本仓库（Fork 后再 clone 也行）
+git clone https://github.com/<you>/workbuddy-auto-checkin.git
+cd workbuddy-auto-checkin
+
+# 2. 提取 uid / domain / accessToken / refreshToken
+python extract_token.py
+```
+
+输出会显示 `uid` 和 `domain`，并把 `accessToken`（及可选的 `refreshToken`）写入 `wb_cloud_token.txt` / `wb_refresh_token.txt`。
+
+> 需要 Python 3（用系统自带 `python` 即可）。若 WorkBuddy 装在非默认目录，脚本会自动从注册表探测；仍找不到时可用 `WORKBUDDY_EXE` 环境变量指定 `WorkBuddy.exe` 的完整路径。提取完请及时删除这两个 txt。
 
 #### 2. 创建仓库并上传
 
