@@ -60,8 +60,10 @@ def _post(path, headers, body=b"{}"):
 def _post_external(url, payload):
     """向外部通知服务发 POST JSON（失败静默忽略，不阻断签到主流程）。"""
     data = json.dumps(payload).encode("utf-8")
+    # charset=utf-8 matches the official ServerChan Python example and keeps
+    # Chinese notification text intact through proxies/gateways.
     req = urllib.request.Request(
-        url, data=data, headers={"Content-Type": "application/json"}, method="POST"
+        url, data=data, headers={"Content-Type": "application/json;charset=utf-8"}, method="POST"
     )
     ctx = ssl.create_default_context()
     with urllib.request.urlopen(req, timeout=15, context=ctx):
