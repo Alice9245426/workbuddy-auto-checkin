@@ -15,6 +15,14 @@
 - 新增「分享给朋友：一句话让 AI 帮你部署」章节，说明为何不能只说「帮我安装 github 上的 workbuddy-auto-checkin」（同名仓库 30 个、本项目非可安装包）。
 - 云端部署步骤改为直接使用 `extract_token.py`，不再要求用户自行编写解密脚本。
 
+### 修复（全面审计）
+
+- `SKILL.md` 版本号与 CHANGELOG 对齐（1.1.0）。
+- CI 自检补充覆盖 `extract_token.py`（语法编译 + 导入）。
+- `setup_windows.ps1` 抑制 `Invoke-WebRequest` / `Expand-Archive` 的进度条输出，避免全新安装时满屏刷屏被误认为卡死。
+- 通知请求头 `Content-Type` 补充 `charset=utf-8`，与 Server酱官方示例一致，避免中文通知在部分网关下乱码。
+- 新增「用 Skill 一句话跑起来」章节（双语），修正「分享给朋友」中已过时的「没有 SKILL.md」描述。
+
 ## [1.0.0] - 2026-11-07
 
 ### 新增
