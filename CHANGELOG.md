@@ -2,6 +2,21 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/) 格式，并使用 [Semantic Versioning](https://semver.org/lang/zh-CN/) 版本号。
 
+## [1.1.2] - 2026-11-08
+
+### 修复（可靠性，真机验证）
+
+- `.github/workflows/checkin.yml`：cron 从 UTC 整点 `0 16 * * *` 改为三个错峰时点（北京时间 00:13 / 00:37 / 01:07）。2026-11-08 实测整点那次**当天 0 次 `schedule` 运行**，而 `workflow_dispatch` 一直正常 —— 整点高负载会直接跳过。错峰 + 多时点互为兜底，脚本先查状态再签到，幂等不重复领。
+- `.github/workflows/checkin.yml`：单次请求失败时在同一 job 内重试 3 次（间隔 30 秒），缓解网络抖动 / 接口 5xx 导致的当天漏签。
+
+### 文档
+
+- 删除「分享给朋友」里要求 AI 代跑 `extract_token.py`、代写 Secrets 的整段提示词（与 `SKILL.md` 安全红线直接冲突），改为默认推荐本地方案的纯链接推荐语。
+- 云端部署路径统一为「新建私有仓库 + 只上传 2 个文件」，不再引导 Fork（Fork 会把提取脚本带进去，将来同步上游等于新代码带着完整凭据跑）。
+- 补充长期维护风险表：30 天 token 到期、客户端重登、GitHub 60 天无活动自动禁用 schedule、境外 IP / 逆向接口的账号风控。
+- 新增「本地任务报 `NETWORK` / SSL EOF」排查：计划任务读注册表系统代理，与终端会话的 `HTTPS_PROXY` 不同；可用用户级 `NO_PROXY` 让腾讯域绕过有问题的代理。
+- 以上同步 `README.md` / `README_EN.md` / `SKILL.md`。
+
 ## [1.1.1] - 2026-11-07
 
 ### 修复（全面审计 + 真机/真实接口验证）
