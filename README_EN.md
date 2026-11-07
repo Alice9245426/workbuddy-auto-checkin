@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" width="140" alt="WorkBuddy Auto Check-in logo" />
+
 # 🔧 WorkBuddy Auto Check-in
 
 **Fully automate WorkBuddy (Tencent AI assistant) daily check-in to earn credits — no need to manually open the client.**
