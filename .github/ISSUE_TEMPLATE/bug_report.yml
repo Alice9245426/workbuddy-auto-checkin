@@ -1,0 +1,84 @@
+name: 🐛 Bug 报告
+description: 报告一个 bug，帮助我们改进项目
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你花时间报告问题！提交前请先搜索已有的 [Issues](https://github.com/Alice9245426/workbuddy-auto-checkin/issues)，确认未重复。
+        ⚠️ **请勿在报告中粘贴任何真实 token、uid、账号等敏感信息。**
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰、简洁地描述这个 bug。
+      placeholder: 发生了什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 列出触发该问题的具体步骤。
+      placeholder: |
+        1. 运行 '...'
+        2. 看到错误 '...'
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+      description: 你期望发生什么？
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 报错信息
+      description: 粘贴相关日志（务必先脱敏，删除 token/uid）。
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: 例如 Windows 11 23H2
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python 版本
+      placeholder: 例如 3.13
+    validations:
+      required: false
+
+  - type: input
+    id: workbuddy
+    attributes:
+      label: WorkBuddy 客户端版本
+      placeholder: 例如 5.6.2
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 哪个方案
+      options:
+        - 本地方案（Windows 任务计划）
+        - 云端方案（GitHub Actions）
+        - 两者都有
+        - 其他
+    validations:
+      required: true
