@@ -52,6 +52,8 @@
 | 🔁 **幂等安全** | 先查当天是否已签，已签则跳过，不会重复领取 |
 | 🔐 **破解登录态加密** | 新版 WorkBuddy 对本地 token 做了信封加密，本项目给出客户端运行时内解密的完整思路 |
 | 🛡️ **零敏感信息落盘** | token 全程走内存 / 环境变量 / GitHub Secrets，不打印、不落盘 |
+| 🔄 **自动续期** | 可选：配置 refreshToken 后，签到前自动刷新 accessToken，云端有效期从 30 天延长到约 60 天 |
+| 📣 **结果通知** | 可选：签到结果推送到 Telegram / Server酱（微信）/ 通用 webhook |
 | 🚀 **零依赖** | 云端脚本仅用 Python 标准库，无需 `pip install` 任何东西 |
 
 ---
@@ -86,12 +88,15 @@ python signin.py status
 
 ```
 workbuddy-auto-checkin/
-├── cloud_checkin.py              # 云端签到脚本（纯 Python 标准库，零依赖）
+├── cloud_checkin.py              # 云端签到脚本（纯 Python 标准库，零依赖，含续期+通知）
 ├── .github/
 │   ├── workflows/
-│   │   └── checkin.yml           # GitHub Actions 定时配置
+│   │   ├── checkin.yml           # 签到定时配置（每日北京时间 00:00）
+│   │   └── ci.yml                # CI 自检（语法 / 导入 / 无 token 干跑）
 │   ├── ISSUE_TEMPLATE/           # Issue 模板
-│   └── PULL_REQUEST_TEMPLATE.md  # PR 模板
+│   ├── PULL_REQUEST_TEMPLATE.md  # PR 模板
+│   └── FUNDING.yml               # 赞助入口
+├── assets/                       # logo 与社交预览图
 ├── CONTRIBUTING.md               # 贡献指南
 ├── CHANGELOG.md                  # 更新日志
 ├── CODE_OF_CONDUCT.md            # 行为准则
@@ -220,6 +225,28 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 仓库 **Actions** 页 → 选中工作流 → **Run workflow**，观察日志输出 `{"ok": true, ...}` 即成功。
 
+#### 5. 结果通知（可选）
+
+在 Secrets 里额外配置通知渠道后，签到结果（成功 / 已签 / 失败）会自动推送：
+
+| Secret | 用途 | 说明 |
+|---|---|---|
+| `TG_BOT_TOKEN` + `TG_CHAT_ID` | Telegram | 通过 Bot API 推送 |
+| `SERVERCHAN_KEY` | Server酱（微信） | 到 [sct.ftqq.com](https://sct.ftqq.com) 扫码绑定获取 SendKey |
+| `NOTIFY_WEBHOOK` | 通用 webhook | POST 一个 JSON 到该地址 |
+
+三个渠道可同时配置、互不冲突；都不配置则静默运行。
+
+#### 6. token 自动续期（可选）
+
+云端默认只存 `accessToken`（约 30 天过期）。若额外配置 `WB_REFRESH_TOKEN`（refreshToken），脚本会在签到前先调用刷新接口把 accessToken 换成新的，把云端有效期延长到约 **60 天**：
+
+| Secret | 说明 |
+|---|---|
+| `WB_REFRESH_TOKEN` | refreshToken（与 accessToken 一起从本地登录态提取） |
+
+> ⚠️ 刷新接口从客户端逆向，存在失效风险；刷新失败时会自动回退用原 `WB_TOKEN` 签到，不影响主流程。注意 refreshToken 本身也会过期（约 60 天），到期后仍需重新提取。
+
 ### 定时说明
 
 `checkin.yml` 里的 cron `0 16 * * *` 对应 **北京时间 00:00**（UTC+8）。GitHub Actions 的 schedule 不保证准点，通常有几到十几分钟延迟。
@@ -255,7 +282,7 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 - 刷新由 **WorkBuddy 客户端后台**自动触发（无需手动登录）。
 - 因此：**电脑常开 + 客户端后台常驻 → 本地 token 自动续期、永不失效**，本地方案可无限期自动运行。
 
-云端 Secrets 里的 `accessToken` 是一次性快照（30 天后过期），如需云端也长期有效，可进一步扩展为「存 `refreshToken` + 每天先刷新再签到」的自动续期循环（注意：可能与本地客户端产生令牌竞争）。
+云端 Secrets 里的 `accessToken` 是一次性快照（30 天后过期）。本项目的 `cloud_checkin.py` 已内置「存 `refreshToken` + 每天先刷新再签到」的自动续期能力（见上方「方案二」第 6 步），可把云端有效期延长到约 60 天（注意：可能与本地客户端产生令牌竞争）。
 
 ---
 
