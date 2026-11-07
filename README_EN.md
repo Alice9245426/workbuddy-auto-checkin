@@ -362,7 +362,7 @@ By default the cloud only stores `accessToken` (~30 days). If you also set `WB_R
 |---|---|---|
 | `13 16 * * *` | 00:13 | primary |
 | `37 16 * * *` | 00:37 | fallback 1 |
-| `7 17 * * *` | 01:07 | fallback 2 |
+| `7 17 * * *` | 01:22 | fallback 2 |
 
 > ⚠️ Earlier versions used `0 16 * * *` (UTC top-of-hour). On 2026-11-08 that slot produced **zero `schedule` runs all day**, while manual `workflow_dispatch` kept working — peak load can skip the run entirely. Hence the off-peak multi-slot setup, plus 3 in-job retries (30s apart) on failure.
 
