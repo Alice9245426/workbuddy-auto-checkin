@@ -354,7 +354,15 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 ### 定时说明与长期维护
 
-`checkin.yml` 里的 cron `0 16 * * *` 对应 **北京时间 00:00**（UTC+8）。GitHub Actions 的 schedule 不保证准点，UTC 整点是负载高峰，通常有几到十几分钟延迟，极端情况下可能跳过当次运行。
+`checkin.yml` 配置了三个**非整点** cron，互为兜底（脚本先查状态再签到，幂等，不会重复领积分）：
+
+| cron (UTC) | 北京时间 | 作用 |
+|---|---|---|
+| `13 16 * * *` | 00:13 | 主签 |
+| `37 16 * * *` | 00:37 | 兜底 1 |
+| `7 17 * * *` | 01:07 | 兜底 2 |
+
+> ⚠️ 早期版本用 `0 16 * * *`（UTC 整点）。2026-11-08 实测该时点**当天一次 `schedule` 运行都没有产生**（手动 `workflow_dispatch` 一直正常），整点高负载会直接跳过。故改为错峰 + 多时点；同时 workflow 内对失败重试 3 次（间隔 30 秒）。
 
 云端方案用的是「一次性凭据快照」，下面几件事会让签到**静默中断**，建议设好提醒：
 
@@ -363,10 +371,24 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 | `accessToken` 过期 | 提取后约 **30 天**（对应登录态里的 `expiresAt`） | 重新运行 `extract_token.py`，更新 `WB_TOKEN` |
 | 本机重新登录 / 换账号 / 重装客户端 | 随时 | Secrets 里的快照可能提前失效，需重新提取 |
 | GitHub 自动禁用 schedule | 仓库 **60 天无任何提交或活动** | 到 Actions 页重新启用工作流；平时偶尔推一次提交即可 |
-| 单次请求失败 | 网络抖动 / 接口 5xx | 脚本无重试，当天不再补签；建议配置第 5 步的通知渠道，避免静默失败 |
+| 单次请求失败 | 网络抖动 / 接口 5xx | workflow 内自动重试 3 次；三次都失败才漏签，建议配置第 5 步通知渠道避免静默失败 |
 | 腾讯改接口或加风控 | 不可预测 | 见 [常见问题](#-常见问题) |
 
 > 💡 如果**电脑经常开机**，[方案一（本地）](#-方案一本地windows-任务计划) 明显更稳：token 由客户端后台滚动续期、7 个触发点兜底、准点 00:00，不需要 GitHub 账号，也不涉及凭据外存。
+
+#### 本地任务报 `NETWORK` / SSL EOF（实测 2026-11-08）
+
+计划任务由 Windows 系统启动，会读取注册表的系统代理（`ProxyServer`），**不继承终端会话的 `HTTPS_PROXY`**。若该代理对腾讯域返回 `[SSL: UNEXPECTED_EOF_WHILE_READING]`，`signin.py` 跑满退避重试后会写 `"result": "NETWORK"`、`LastTaskResult=1`；但在终端手动跑 `status` 却可能成功（终端走的是另一个代理），很容易误判成脚本坏了。
+
+排查方式：分别用「系统代理端口 / 终端代理端口 / 无代理直连」请求一次 `https://copilot.tencent.com/`，看哪条通路报 SSL EOF。定位后，**在用户级环境变量里设置 `NO_PROXY=copilot.tencent.com,*.tencent.com`**（只让该域名绕过代理，直连可用时最稳），再强制触发任务确认 `LastTaskResult=0`、日志出现 `ALREADY` / `CLAIMED`：
+
+```powershell
+[Environment]::SetEnvironmentVariable('NO_PROXY', 'copilot.tencent.com,*.tencent.com', 'User')
+Start-ScheduledTask -TaskName "WorkBuddyAutoSignin"
+Get-ScheduledTaskInfo -TaskName "WorkBuddyAutoSignin" | Select LastRunTime, LastTaskResult
+```
+
+注意：若你的网络**必须**走代理才能访问腾讯域，就不要设 `NO_PROXY`，改为修正该代理的分流规则。
 
 ---
 
@@ -375,9 +397,9 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 | 维度 | 本地方案 | 云端方案 |
 |---|---|---|
 | 依赖本地电脑 | ✅ 需要电脑开机 | ❌ 不需要 |
-| 准点性 | ✅ 精确 00:00 | ⚠️ 有延迟（几分钟到十几分钟） |
+| 准点性 | ✅ 精确 00:00（+6 个补签点） | ⚠️ 00:13 起三个错峰时点，仍可能被延迟或跳过 |
 | 维护成本 | ✅ 零（token 自动续期） | ⚠️ accessToken 30 天要重提 |
-| 稳定性 | ✅ 高 | ⚠️ token 到期需重提、60 天无活动自动禁用 schedule、单次失败无重试 |
+| 稳定性 | ✅ 高 | ⚠️ token 到期需重提、60 天无活动自动禁用 schedule、依赖 GitHub 排程 |
 | 推荐场景 | 电脑常开 | 电脑可能长期关机 |
 
 > 💡 两者可**同时使用**：同一天谁先到谁签，另一个幂等跳过，积分不会重复。

@@ -356,7 +356,15 @@ By default the cloud only stores `accessToken` (~30 days). If you also set `WB_R
 
 ### Schedule and long-term maintenance
 
-`checkin.yml` cron `0 16 * * *` corresponds to **00:00 Beijing time** (UTC+8). GitHub Actions schedules are not exact; the UTC top-of-hour is a peak-load window, so runs usually lag a few to a dozen minutes and may occasionally be skipped entirely.
+`checkin.yml` uses three **off-peak** crons as fallbacks for each other (the script checks status before claiming, so it is idempotent and never double-claims):
+
+| cron (UTC) | Beijing time | Role |
+|---|---|---|
+| `13 16 * * *` | 00:13 | primary |
+| `37 16 * * *` | 00:37 | fallback 1 |
+| `7 17 * * *` | 01:07 | fallback 2 |
+
+> ⚠️ Earlier versions used `0 16 * * *` (UTC top-of-hour). On 2026-11-08 that slot produced **zero `schedule` runs all day**, while manual `workflow_dispatch` kept working — peak load can skip the run entirely. Hence the off-peak multi-slot setup, plus 3 in-job retries (30s apart) on failure.
 
 The cloud option uses a **one-time credential snapshot**. Each of the following can silently break your streak:
 
@@ -365,10 +373,24 @@ The cloud option uses a **one-time credential snapshot**. Each of the following 
 | `accessToken` expires | ~**30 days** after extraction (`expiresAt` in local credentials) | Re-run `extract_token.py` and update `WB_TOKEN` |
 | Local re-login / account switch / client reinstall | Any time | The snapshot in Secrets may be revoked early; re-extract |
 | GitHub disables the schedule | **60 days** with no commit or repo activity | Re-enable the workflow in the Actions tab; push a commit occasionally |
-| A single request fails | Network blip / API 5xx | No retry, no catch-up that day; configure step 5 notifications to avoid silent failure |
+| A single request fails | Network blip / API 5xx | The workflow retries 3 times; only 3 consecutive failures lose the day. Configure step 5 notifications to avoid silent failure |
 | Tencent changes the API or adds risk control | Unpredictable | See [FAQ](#-faq) |
 
 > 💡 If your **PC is usually on**, ["Option 1 (Local)"](#-option-1-local-windows-task-scheduler) is clearly more robust: the client renews the token in the background, 7 trigger points, exact 00:00, no GitHub account, and no credential ever leaves your machine.
+
+#### Local task reports `NETWORK` / SSL EOF (observed 2026-11-08)
+
+A scheduled task is started by Windows and reads the **system proxy from the registry** (`ProxyServer`); it does **not** inherit `HTTPS_PROXY` from your terminal session. If that proxy returns `[SSL: UNEXPECTED_EOF_WHILE_READING]` for the Tencent domain, `signin.py` burns through its backoff retries and logs `"result": "NETWORK"` with `LastTaskResult=1`, while running `status` manually in a terminal succeeds (different proxy) — which makes it look like a broken script.
+
+To diagnose, request `https://copilot.tencent.com/` once via the system proxy port, once via the terminal proxy port, and once with no proxy, then see which path throws SSL EOF. The fix is usually a **user-level `NO_PROXY`** for that domain (bypass only that host; direct connections work on most networks), then force-run the task and confirm `LastTaskResult=0` with `ALREADY` / `CLAIMED` in the log:
+
+```powershell
+[Environment]::SetEnvironmentVariable('NO_PROXY', 'copilot.tencent.com,*.tencent.com', 'User')
+Start-ScheduledTask -TaskName "WorkBuddyAutoSignin"
+Get-ScheduledTaskInfo -TaskName "WorkBuddyAutoSignin" | Select LastRunTime, LastTaskResult
+```
+
+If your network **requires** a proxy to reach the Tencent domain, do not set `NO_PROXY` — fix that proxy's routing rule instead.
 
 ---
 
@@ -377,9 +399,9 @@ The cloud option uses a **one-time credential snapshot**. Each of the following 
 | Dimension | Local | Cloud |
 |---|---|---|
 | Depends on local PC | ✅ PC must be on | ❌ No |
-| Punctuality | ✅ Exact 00:00 | ⚠️ Lag (minutes) |
+| Punctuality | ✅ Exact 00:00 (+6 catch-up slots) | ⚠️ Three off-peak slots from 00:13; still subject to delay or skipping |
 | Maintenance | ✅ None (auto-renewal) | ⚠️ Re-extract accessToken every 30 days |
-| Stability | ✅ High | ⚠️ Token re-extraction, 60-day inactivity auto-disable, no retry on failure |
+| Stability | ✅ High | ⚠️ Token re-extraction, 60-day inactivity auto-disable, depends on GitHub scheduling |
 | Best for | PC usually on | PC may be off for long |
 
 > 💡 You can run **both** together: whichever runs first checks in, the other idempotently skips. Credits are never doubled.

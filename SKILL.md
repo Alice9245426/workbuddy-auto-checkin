@@ -87,6 +87,7 @@ Get-Content "$env:LOCALAPPDATA\WorkBuddyAutoCheckin\signin.log" -Tail 3
 | 注册报拒绝访问 0x80070005 | 用同一 Windows 账号以管理员身份打开 PowerShell 重试 |
 | git clone 失败 | 校园网/代理常见；手动下载上游 zip 解压到 `%LOCALAPPDATA%\WorkBuddyAutoCheckin` 后重跑 |
 | 今天已签到 | 正常，幂等跳过，不是错误 |
+| 任务 `LastTaskResult=1`、日志 `"result": "NETWORK"` / `[SSL: UNEXPECTED_EOF_WHILE_READING]` | 计划任务读注册表系统代理，与终端会话的 `HTTPS_PROXY` 不同；对比「系统代理 / 终端代理 / 无代理直连」三条通路定位，再在用户级环境变量设 `NO_PROXY=copilot.tencent.com,*.tencent.com`（仅在直连可用时），强制触发验证 `LastTaskResult=0` |
 
 ## 安全红线（必须遵守）
 
@@ -106,7 +107,7 @@ Get-Content "$env:LOCALAPPDATA\WorkBuddyAutoCheckin\signin.log" -Tail 3
 - `accessToken` 是**完整账号凭据**，不是受限令牌；本项目没有降权方案。
 - 约 **30 天**过期（`expiresAt`），到期需重新提取；本机重新登录 / 换账号也可能让快照提前失效。
 - GitHub 在仓库 **60 天无任何活动**时会自动禁用 scheduled workflow，需去 Actions 页重新启用。
-- cron 在 UTC 16:00 整点（北京时间 00:00）属高负载时段，可能延迟或跳过；单次请求失败无重试、无补签，不配通知就会静默失败。
+- cron 已改为三个错峰时点（北京 00:13 / 00:37 / 01:07），workflow 内失败重试 3 次。早期 `0 16 * * *` 整点版本实测 2026-11-08 当天 **0 次 `schedule` 运行**；不配通知时失败仍会静默。
 - 签到接口为客户端逆向，云端从 GitHub 境外 IP 发起，存在账号风控风险（见 README 免责声明）。
 
 **默认推荐本地方案**：token 由客户端后台滚动续期、7 个触发点兜底、准点、凭据不出本机。详见 README「方案二」。
