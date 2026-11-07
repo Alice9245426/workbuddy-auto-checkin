@@ -2,8 +2,12 @@ name: WorkBuddy Daily Checkin
 
 on:
   schedule:
-    # UTC 16:00 = 北京时间 00:00（GitHub cron 可能有几分钟延迟）
-    - cron: "0 16 * * *"
+    # UTC 16:xx = 北京时间 00:xx。刻意避开 UTC 整点：GitHub 在整点负载最高，
+    # 实测 2026-11-08 的 "0 16 * * *" 那次被完全跳过（当天 0 次 schedule run）。
+    # 三个非整点时点互为兜底；脚本先查状态再签到，幂等，不会重复领积分。
+    - cron: "13 16 * * *"   # 北京 00:13 主签
+    - cron: "37 16 * * *"   # 北京 00:37 兜底 1
+    - cron: "7 17 * * *"    # 北京 01:07 兜底 2
   workflow_dispatch: {}
 
 permissions:
@@ -27,4 +31,20 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
           NOTIFY_WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK }}
-        run: python cloud_checkin.py
+        # 单次网络抖动就会漏签一整天：失败时在本 job 内重试 3 次。
+        # cloud_checkin.py 成功返回 0、失败返回非 0；签到本身幂等，重试不会重复领。
+        run: |
+          for attempt in 1 2 3; do
+            echo "::group::checkin attempt $attempt"
+            if python cloud_checkin.py; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ "$attempt" -lt 3 ]; then
+              echo "attempt $attempt failed, retrying in 30s..."
+              sleep 30
+            fi
+          done
+          echo "::error::checkin failed after 3 attempts"
+          exit 1
