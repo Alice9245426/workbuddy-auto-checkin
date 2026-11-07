@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -26,8 +27,11 @@ jobs:
 
       - name: 无 token 干跑自检（期望退出码 2）
         run: |
+          set +e
           python cloud_checkin.py
           code=$?
+          set -e
+          echo "退出码：$code"
           if [ "$code" -ne 2 ]; then
             echo "期望无 token 时退出码为 2，实际 $code"
             exit 1
