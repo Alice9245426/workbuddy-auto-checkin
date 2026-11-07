@@ -12,6 +12,10 @@
 - 社区规范文件：贡献指南、行为准则、安全政策。
 - Issue 模板（Bug 报告 / 功能请求）与 PR 模板。
 - 项目 logo（`assets/logo.png`）与社交预览图（`assets/social-preview.png`）。
+- CI 自检工作流 `ci.yml`（语法 / 导入 / 无 token 干跑，push 与 PR 触发）。
+- 签到结果通知（可选：Telegram / Server酱 / 通用 webhook）。
+- 云端 token 自动续期（可选：`WB_REFRESH_TOKEN`，签到前刷新 accessToken）。
+- 赞助入口 `FUNDING.yml`。
 
 ### 文档
 
