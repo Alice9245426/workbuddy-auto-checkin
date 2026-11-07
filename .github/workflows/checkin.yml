@@ -22,4 +22,9 @@ jobs:
           WB_TOKEN: ${{ secrets.WB_TOKEN }}
           WB_UID: ${{ secrets.WB_UID }}
           WB_DOMAIN: ${{ secrets.WB_DOMAIN }}
+          WB_REFRESH_TOKEN: ${{ secrets.WB_REFRESH_TOKEN }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
+          NOTIFY_WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK }}
         run: python cloud_checkin.py
