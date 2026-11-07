@@ -191,7 +191,20 @@ Store `accessToken` in GitHub Secrets; GitHub Actions runs `cloud_checkin.py` on
 
 #### 1. Extract accessToken
 
-The local script (88lin) already has decryption capability. Write a 3-line script that reuses its decrypt function (calls `loggerGet()` to decrypt `$wbEncrypted`), yielding a JWT-form `accessToken` plus your `uid` and `domain`.
+On a machine where you are **logged into WorkBuddy**, run the bundled extractor (auto-locates the client, decrypts in memory, no network, no plaintext printed by default):
+
+```bash
+# 1. Clone this repo (or Fork then clone)
+git clone https://github.com/<you>/workbuddy-auto-checkin.git
+cd workbuddy-auto-checkin
+
+# 2. Extract uid / domain / accessToken / refreshToken
+python extract_token.py
+```
+
+It prints your `uid` and `domain`, and writes `accessToken` (plus optional `refreshToken`) to `wb_cloud_token.txt` / `wb_refresh_token.txt`.
+
+> Requires Python 3. If WorkBuddy is installed in a non-default directory, the script auto-detects it from the registry; otherwise set `WORKBUDDY_EXE` to the full path of `WorkBuddy.exe`. Delete the two txt files after you are done.
 
 #### 2. Create a repo and upload
 
