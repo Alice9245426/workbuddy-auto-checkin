@@ -1,0 +1,25 @@
+name: WorkBuddy Daily Checkin
+
+on:
+  schedule:
+    # UTC 16:00 = 北京时间 00:00（GitHub cron 可能有几分钟延迟）
+    - cron: "0 16 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run checkin
+        env:
+          WB_TOKEN: ${{ secrets.WB_TOKEN }}
+          WB_UID: ${{ secrets.WB_UID }}
+          WB_DOMAIN: ${{ secrets.WB_DOMAIN }}
+        run: python cloud_checkin.py
