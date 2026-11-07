@@ -1,18 +1,82 @@
-# WorkBuddy 自动签到
+<div align="center">
 
-让 WorkBuddy（腾讯 AI 编程助手）的每日签到领积分全自动完成，无需手动打开客户端。提供 **本地** 与 **云端** 两套独立方案，可单独使用，也可互为兜底。
+# 🔧 WorkBuddy 自动签到
 
-> ⚠️ 本项目仅供技术学习与交流，请遵守 WorkBuddy 的服务条款。使用产生的任何后果（包括账号风控、积分损失等）由使用者自行承担。
+**让 WorkBuddy（腾讯 AI 编程助手）的每日签到领积分全自动完成，无需手动打开客户端。**
+
+[English](./README_EN.md) | 简体中文
+
+<p>
+
+[![GitHub stars](https://img.shields.io/github/stars/Alice9245426/workbuddy-auto-checkin?style=flat-square&logo=github)](https://github.com/Alice9245426/workbuddy-auto-checkin/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Alice9245426/workbuddy-auto-checkin?style=flat-square&logo=github)](https://github.com/Alice9245426/workbuddy-auto-checkin/network)
+[![GitHub issues](https://img.shields.io/github/issues/Alice9245426/workbuddy-auto-checkin?style=flat-square&logo=github)](https://github.com/Alice9245426/workbuddy-auto-checkin/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/Alice9245426/workbuddy-auto-checkin?style=flat-square&logo=github)](https://github.com/Alice9245426/workbuddy-auto-checkin/pulls)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Alice9245426/workbuddy-auto-checkin?style=flat-square&logo=github)](https://github.com/Alice9245426/workbuddy-auto-checkin/commits)
+[![License](https://img.shields.io/github/license/Alice9245426/workbuddy-auto-checkin?style=flat-square)](./LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](./CONTRIBUTING.md)
+
+</p>
+
+</div>
+
+> ⚠️ **免责声明**：本项目仅供技术学习与交流，请遵守 WorkBuddy 的服务条款。使用产生的任何后果（包括账号风控、积分损失等）由使用者自行承担。
+
+---
+
+## 📑 目录
+
+- [功能特性](#-功能特性)
+- [快速开始](#-快速开始)
+- [目录结构](#-目录结构)
+- [核心原理：登录态加密](#-核心原理登录态加密)
+- [方案一：本地（Windows 任务计划）](#-方案一本地windows-任务计划)
+- [方案二：云端（GitHub Actions）](#-方案二云端github-actions)
+- [本地 vs 云端对比](#-本地-vs-云端对比)
+- [token 续期机制](#-token-续期机制)
+- [常见问题](#-常见问题)
+- [贡献指南](#-贡献指南)
+- [致谢](#-致谢)
+- [许可证](#-许可证)
 
 ---
 
 ## ✨ 功能特性
 
-- **本地方案**：Windows 任务计划程序 + 脚本，每天 00:00 准点自动签到，静默无窗口、不耗 AI token。
-- **云端方案**：GitHub Actions 定时运行，不依赖本地电脑，关机也能签到。
-- **幂等**：先查当天是否已签到，已签则跳过，不会重复领取。
-- **破解登录态加密**：新版 WorkBuddy 对本地 token 做了信封加密，本项目给出了在客户端运行时内解密的完整思路。
-- **零敏感信息落盘**：token 全程走内存 / 环境变量 / GitHub Secrets，脚本不打印、不落盘。
+| 特性 | 说明 |
+|---|---|
+| 🖥️ **本地方案** | Windows 任务计划 + 脚本，每天 00:00 准点签到，静默无窗口、不耗 AI token |
+| ☁️ **云端方案** | GitHub Actions 定时运行，不依赖本地电脑，关机也能签到 |
+| 🔁 **幂等安全** | 先查当天是否已签，已签则跳过，不会重复领取 |
+| 🔐 **破解登录态加密** | 新版 WorkBuddy 对本地 token 做了信封加密，本项目给出客户端运行时内解密的完整思路 |
+| 🛡️ **零敏感信息落盘** | token 全程走内存 / 环境变量 / GitHub Secrets，不打印、不落盘 |
+| 🚀 **零依赖** | 云端脚本仅用 Python 标准库，无需 `pip install` 任何东西 |
+
+---
+
+## 🚀 快速开始
+
+**只想在本地用（推荐，电脑常开）**：
+
+```bash
+# 1. 克隆已解决加密问题的本地脚本
+git clone https://github.com/88lin/workbuddy-auto-signin.git
+cd workbuddy-auto-signin
+
+# 2. 离线自检 + 只读验证
+python signin.py doctor
+python signin.py status
+
+# 3. 注册 Windows 计划任务（见「方案一」）
+```
+
+**想不依赖电脑（云端兜底）**：
+
+```bash
+# 1. Fork 本仓库
+# 2. 在仓库 Settings → Secrets 配置 WB_TOKEN / WB_UID / WB_DOMAIN
+# 3. Actions 页手动触发验证
+```
 
 ---
 
@@ -22,24 +86,33 @@
 workbuddy-auto-checkin/
 ├── cloud_checkin.py              # 云端签到脚本（纯 Python 标准库，零依赖）
 ├── .github/
-│   └── workflows/
-│       └── checkin.yml           # GitHub Actions 定时配置
+│   ├── workflows/
+│   │   └── checkin.yml           # GitHub Actions 定时配置
+│   ├── ISSUE_TEMPLATE/           # Issue 模板
+│   └── PULL_REQUEST_TEMPLATE.md  # PR 模板
+├── CONTRIBUTING.md               # 贡献指南
+├── CHANGELOG.md                  # 更新日志
+├── CODE_OF_CONDUCT.md            # 行为准则
+├── SECURITY.md                   # 安全政策
 ├── LICENSE                       # MIT
-└── README.md
+├── README.md                     # 中文文档
+└── README_EN.md                  # English docs
 ```
 
 ---
 
-## 🧠 核心原理：新版 WorkBuddy 的登录态加密
+## 🧠 核心原理：登录态加密
 
 WorkBuddy **5.6.2+** 把本地登录态文件（`workbuddy-desktop.info`）里的 `accessToken`、`refreshToken`、`nickname` 做了**信封加密**，社区里大量早期签到脚本因此失效——它们读到的 token 是空字符串或 `$wbEncrypted` 占位。
 
 逆向其客户端（`app.asar`）后确认的加密结构：
 
-- 算法：**AES-256-GCM**
-- 附加认证数据（AAD）：`WB-AAD\0`
-- 密钥来源：由 `keyblob` 文件 + `protectorKey`（系统凭据，DPAPI 保护）派生，**密钥不落盘**
-- 解密入口：客户端原生绑定 `electron_browser_workbuddy_storage.loggerGet()`，仅在客户端运行时内可用
+| 项目 | 值 |
+|---|---|
+| 算法 | AES-256-GCM |
+| 附加认证数据（AAD） | `WB-AAD\0` |
+| 密钥来源 | `keyblob` + `protectorKey`（系统凭据，DPAPI 保护），密钥不落盘 |
+| 解密入口 | 客户端原生绑定 `electron_browser_workbuddy_storage.loggerGet()` |
 
 因此正确的解密方式不是手动逆向 DPAPI，而是**让客户端自己在运行时解密**：
 
@@ -51,9 +124,7 @@ ELECTRON_RUN_AS_NODE=1 "WorkBuddy.exe" -e <js>
 
 > 本地方案的解密实现参考了开源项目 [88lin/workbuddy-auto-signin](https://github.com/88lin/workbuddy-auto-signin)（MIT），该项目已验证此思路，推荐直接使用。
 
----
-
-## 🔑 签到接口
+### 签到接口
 
 签到接口从桌面端逆向而来（域 `copilot.tencent.com`）：
 
@@ -99,7 +170,7 @@ Content-Type: application/json
 
 5. **验证**：`Start-ScheduledTask -TaskName "WorkBuddyAutoSignin"` 强制触发一次，检查 `signin.log`。
 
-> 建议额外加一个「补签兜底」任务（如每天 06:00 / 12:00 / 18:00 各跑一次 `silent-poll`），防止 00:00 撞上关机/睡眠导致断签。
+> 💡 建议额外加一个「补签兜底」任务（如每天 06:00 / 12:00 / 18:00 各跑一次 `silent-poll`），防止 00:00 撞上关机/睡眠导致断签。
 
 ---
 
@@ -115,7 +186,7 @@ Content-Type: application/json
 
 本地方案脚本（88lin）已具备解密能力，可写一个 3 行脚本复用其解密函数导出 token（核心是调 `loggerGet()` 解 `$wbEncrypted`），得到一段 JWT 形式的 `accessToken` 与你的 `uid`、`domain`。
 
-#### 2. 创建私有仓库并上传
+#### 2. 创建仓库并上传
 
 ```bash
 gh repo create workbuddy-cloud-checkin --private
@@ -153,7 +224,21 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 ---
 
-## 🔄 token 续期机制（重要发现）
+## ⚖️ 本地 vs 云端对比
+
+| 维度 | 本地方案 | 云端方案 |
+|---|---|---|
+| 依赖本地电脑 | ✅ 需要电脑开机 | ❌ 不需要 |
+| 准点性 | ✅ 精确 00:00 | ⚠️ 有延迟（几分钟到十几分钟） |
+| 维护成本 | ✅ 零（token 自动续期） | ⚠️ accessToken 30 天要重提 |
+| 稳定性 | ✅ 高 | ⚠️ 受 GitHub 免费版配额影响 |
+| 推荐场景 | 电脑常开 | 电脑可能长期关机 |
+
+> 💡 两者可**同时使用**：同一天谁先到谁签，另一个幂等跳过，积分不会重复。
+
+---
+
+## 🔄 token 续期机制
 
 登录态里的 token 有效期：
 
@@ -174,26 +259,39 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 ## ❓ 常见问题
 
-**Q：签到会重复领积分吗？**
+<details>
+<summary><b>Q：签到会重复领积分吗？</b></summary>
 不会。脚本先查状态，当天已签则直接跳过（幂等）。
+</details>
 
-**Q：本地和云端同时跑会冲突吗？**
+<details>
+<summary><b>Q：本地和云端同时跑会冲突吗？</b></summary>
 不会。同一天谁先到谁签，另一个幂等跳过，积分不会重复。
+</details>
 
-**Q：登录态过期了怎么办？**
-本地：打开一次 WorkBuddy 客户端即可恢复（后台会自动刷新）。
+<details>
+<summary><b>Q：登录态过期了怎么办？</b></summary>
+本地：打开一次 WorkBuddy 客户端即可恢复（后台会自动刷新）。<br>
 云端：需要重新提取一次 accessToken 更新 Secrets。
+</details>
 
-**Q：腾讯改版/加风控了怎么办？**
+<details>
+<summary><b>Q：腾讯改版/加风控了怎么办？</b></summary>
 接口从桌面端逆向，存在失效可能。若脚本报错，通常需重新逆向接口；若账号被风控要求重新登录，任何方案都无法绕过。
+</details>
+
+<details>
+<summary><b>Q：为什么公开仓库的 workflow 会报错？</b></summary>
+公开仓库未配置 Secrets（也不应配置），定时触发会因缺 `WB_TOKEN` 失败，属预期行为。请 Fork 后在自己的仓库配置 Secrets 使用。
+</details>
 
 ---
 
-## ⚖️ 免责声明
+## 🤝 贡献指南
 
-- 本项目仅用于**技术学习与研究**，请勿用于违反 WorkBuddy 服务条款的行为。
-- 接口与加密机制可能随 WorkBuddy 版本更新而变化，不保证长期可用。
-- 使用者应自行评估账号安全与合规风险，作者不承担任何责任。
+欢迎任何形式的贡献！请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)，了解提 Issue、发 PR 的规范。
+
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](./CONTRIBUTING.md)
 
 ---
 
@@ -203,4 +301,4 @@ gh secret set WB_DOMAIN --repo <you>/workbuddy-cloud-checkin --body "www.workbud
 
 ## 📄 许可证
 
-[MIT](./LICENSE)
+本项目基于 [MIT](./LICENSE) 许可证开源。
