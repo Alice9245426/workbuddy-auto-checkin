@@ -28,6 +28,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# Invoke-WebRequest / Expand-Archive would otherwise flood the console with
+# progress bars on a fresh install, which looks like a hang to a first-time user.
+$ProgressPreference = "SilentlyContinue"
 # The upstream script prints UTF-8 Chinese; PowerShell 5.1 decodes native stdout
 # with the ANSI code page by default, which garbles it.
 try {
