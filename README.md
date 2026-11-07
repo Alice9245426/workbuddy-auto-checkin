@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" width="140" alt="WorkBuddy Auto Check-in logo" />
 
-# 🔧 WorkBuddy 自动签到
+# 🔧 WorkBuddy 本地云端自动签到
 
 **让 WorkBuddy（腾讯 AI 编程助手）的每日签到领积分全自动完成，无需手动打开客户端。**
 
