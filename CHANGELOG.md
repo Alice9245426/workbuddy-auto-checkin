@@ -2,6 +2,19 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/) 格式，并使用 [Semantic Versioning](https://semver.org/lang/zh-CN/) 版本号。
 
+## [1.1.0] - 2026-11-07
+
+### 新增
+
+- **WorkBuddy Skill**（`SKILL.md`）：把本地方案封装成可一句话触发的技能，用户说「帮我配置自动签到」即可由 AI 完成部署，无需 GitHub 账号与授权。
+- **一键安装脚本**（`scripts/setup_windows.ps1`）：自动定位 `pythonw.exe`、获取上游脚本、`doctor` 自检、`status` 只读验证、注册 2 个计划任务并回读校验；支持 `-SkipRegister` 自检模式与 git clone 失败时的 GitHub API zip 兜底。
+- **登录信息提取脚本**（`extract_token.py`）：一条命令提取 uid / domain / accessToken / refreshToken，自动从注册表探测 `WorkBuddy.exe`。
+
+### 文档
+
+- 新增「分享给朋友：一句话让 AI 帮你部署」章节，说明为何不能只说「帮我安装 github 上的 workbuddy-auto-checkin」（同名仓库 30 个、本项目非可安装包）。
+- 云端部署步骤改为直接使用 `extract_token.py`，不再要求用户自行编写解密脚本。
+
 ## [1.0.0] - 2026-11-07
 
 ### 新增
