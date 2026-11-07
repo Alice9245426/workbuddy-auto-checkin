@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" width="140" alt="WorkBuddy Auto Check-in logo" />
 
-# 🔧 WorkBuddy 本地云端自动签到
+# 🔧 WorkBuddy 自动签到
 
 **让 WorkBuddy（腾讯 AI 编程助手）的每日签到领积分全自动完成，无需手动打开客户端。**
 
@@ -30,6 +30,7 @@
 
 - [功能特性](#-功能特性)
 - [快速开始](#-快速开始)
+- [用 Skill 一句话跑起来](#-用-skill-一句话跑起来)
 - [分享给朋友：一句话让 AI 帮你部署](#-分享给朋友一句话让-ai-帮你部署)
 - [目录结构](#-目录结构)
 - [核心原理：登录态加密](#-核心原理登录态加密)
@@ -55,25 +56,25 @@
 | 🛡️ **零敏感信息落盘** | token 全程走内存 / 环境变量 / GitHub Secrets，不打印、不落盘 |
 | 🔄 **自动续期** | 可选：配置 refreshToken 后，签到前自动刷新 accessToken，云端有效期从 30 天延长到约 60 天 |
 | 📣 **结果通知** | 可选：签到结果推送到 Telegram / Server酱（微信）/ 通用 webhook |
+| 🤖 **WorkBuddy Skill** | 附带 `SKILL.md`，说一句「帮我配置自动签到」即可由 AI 完成本地方案部署 |
 | 🚀 **零依赖** | 云端脚本仅用 Python 标准库，无需 `pip install` 任何东西 |
 
 ---
 
 ## 🚀 快速开始
 
-**只想在本地用（推荐，电脑常开）**：
+**🗣️ 最省事：让 WorkBuddy 帮你装（推荐，一句话）**
 
-```bash
-# 1. 克隆已解决加密问题的本地脚本
-git clone https://github.com/88lin/workbuddy-auto-signin.git
-cd workbuddy-auto-signin
+把本仓库的 `SKILL.md` 放进 WorkBuddy 的技能目录，或直接把仓库链接交给 AI 助手，然后说「帮我配置自动签到」。本地方案全程本机完成，**不需要 GitHub 账号、不需要授权**。详见 [用 Skill 一句话跑起来](#-用-skill-一句话跑起来)。
 
-# 2. 离线自检 + 只读验证
-python signin.py doctor
-python signin.py status
+**只想在本地用（手动，电脑常开）**：
 
-# 3. 注册 Windows 计划任务（见「方案一」）
+```powershell
+# 一键：自检 + 注册计划任务（在本仓库目录下）
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1
 ```
+
+或按 [「方案一」](#-方案一本地windows-任务计划) 手动分步操作。
 
 **想不依赖电脑（云端兜底）**：
 
@@ -88,13 +89,45 @@ python extract_token.py            # 得到 uid / domain / token
 
 ---
 
+## 🤖 用 Skill 一句话跑起来
+
+本项目附带一个 **WorkBuddy Skill**（`SKILL.md`），把本地方案的部署流程封装成 AI 可执行的指令。
+
+### 安装 Skill（二选一）
+
+- **方式 A（推荐）**：把仓库根目录的 `SKILL.md` 与 `scripts/` 一起复制到 WorkBuddy 的用户级技能目录：
+  ```
+  %USERPROFILE%\.workbuddy\skills\workbuddy-auto-checkin\
+  ```
+  保持 `SKILL.md` 在顶层、`scripts/setup_windows.ps1` 在子目录。
+- **方式 B**：直接把仓库链接交给 AI 助手，让它读取 `SKILL.md` 并按其指令执行。
+
+### 然后说一句话
+
+> 「帮我配置 WorkBuddy 自动签到」
+
+Skill 会自动完成：定位 `pythonw.exe` → 获取上游脚本 → `doctor` 自检 → `status` 只读验证 → 注册 2 个计划任务 → 回读校验。全过程**在本机完成，无需 GitHub 账号、无需授权、不耗 AI token**。
+
+也可以直接手动跑那条命令（先在自检模式验证）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1 -SkipRegister  # 自检，不写系统
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_windows.ps1                # 正式安装
+```
+
+> 已实测：`doctor` 识别 `sym-v1` 加密凭据、`status` 返回 HTTP 200、注册后强制触发 `LastTaskResult=0`、日志正常落盘。
+>
+> ⚠️ **Skill 只覆盖本地方案**。云端方案需要你本人的 GitHub 账号与 token，AI 不该代劳，请按 [「方案二」](#-方案二云端github-actions) 手动配置。
+
+---
+
 ## 🎁 分享给朋友：一句话让 AI 帮你部署
 
 > ⚠️ **不要**只说「帮我安装 GitHub 上的 workbuddy-auto-checkin」。原因见下。
 
 ### 为什么这句话会出问题
 
-1. **它不是能"安装"的软件包**：仓库里没有 `SKILL.md`、`setup.py`、`pyproject.toml`、`package.json`——既不是 WorkBuddy 技能，也不是 pip / npm 包。它是一套「Python 脚本 + GitHub Actions 配置」，正确动作是 **Fork 到自己的账号 + 配置 Secrets**，而不是"安装"到某个项目里。
+1. **「安装」这个词会跑偏**：本项目不是 pip / npm 包，也没有 `setup.py` / `pyproject.toml` / `package.json`。本地方案的正确动作是**运行一键脚本注册 Windows 计划任务**（或加载 `SKILL.md`），云端方案是 **Fork 到自己的账号 + 配置 Secrets**——都不是「安装」。
 2. **同名仓库非常多**：GitHub 上搜 `workbuddy-auto-checkin` 有 **30 个**同名或近名仓库（还有下划线版 `workbuddy_auto_checkin`），其中有的 stars 比本项目更高。只报项目名，AI 很可能 clone 到**别人的同名项目**。
 3. **确实可能"落到别人的项目"**：AI 若按字面去搜索并 fork/clone，没有明确指定作者，就会落到它搜到的第一个结果。你的 token 一旦配到陌生仓库，等于把账号凭据交给了别人的代码，这是最需要避免的风险。
 
@@ -129,6 +162,9 @@ https://github.com/Alice9245426/workbuddy-auto-checkin
 
 ```
 workbuddy-auto-checkin/
+├── SKILL.md                      # WorkBuddy Skill：一句话完成本地方案部署
+├── scripts/
+│   └── setup_windows.ps1         # 一键安装脚本（自检 + 注册计划任务）
 ├── cloud_checkin.py              # 云端签到脚本（纯 Python 标准库，零依赖，含续期+通知）
 ├── extract_token.py              # 登录信息提取脚本（配云端 Secrets 用，一条命令）
 ├── .github/
